@@ -87,7 +87,7 @@ export default function EmployeeTaxResultView({ result }: EmployeeTaxResultViewP
           />
           {result.finalTax !== result.finalTaxBeforeMinimumTax && (
             <ResultRow
-              label={`Minimum Tax Applied (৳${result.minimumTax.toLocaleString()})`}
+              label="Minimum Tax Floor Applied"
               value={formatMoney(result.minimumTax)}
               danger
             />
@@ -99,15 +99,23 @@ export default function EmployeeTaxResultView({ result }: EmployeeTaxResultViewP
         {/* 4. Investment Advice */}
         <Section title="Investment Advice (§78)">
           <ResultRow label="Rebate Eligible Income" value={formatMoney(result.rebateEligibleIncome)} />
-          <ResultRow
-            label="Additional Investment Suggested"
-            value={
-              result.investmentSuggestion > 0
-                ? formatMoney(result.investmentSuggestion)
-                : "—  Already maximised"
-            }
-            highlight={result.investmentSuggestion > 0}
-          />
+          {result.rebateEligibleIncome > 0 ? (
+            <ResultRow
+              label="Additional Investment Suggested"
+              value={
+                result.investmentSuggestion > 0
+                  ? formatMoney(result.investmentSuggestion)
+                  : "—  Rebate fully utilised"
+              }
+              highlight={result.investmentSuggestion > 0}
+            />
+          ) : (
+            <ResultRow
+              label="Additional Investment Suggested"
+              value="N/A — no taxable income"
+              muted
+            />
+          )}
         </Section>
 
         {/* 5. Slab Breakdown */}

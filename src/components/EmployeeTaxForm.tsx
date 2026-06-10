@@ -27,7 +27,7 @@ export default function EmployeeTaxForm({
       {/* Step 1 — Salary */}
       <div className="px-6 py-5">
         <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-4">
-          Step 1 — Salary &amp; Income
+          Step 1 — Salary & Income
         </p>
         <MoneyInput
           label="Monthly Salary"
@@ -55,7 +55,7 @@ export default function EmployeeTaxForm({
       {/* Step 2 — Investment */}
       <div className="px-6 py-5 border-t border-gray-100">
         <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-4">
-          Step 2 — Investment &amp; Savings
+          Step 2 — Investment & Savings
         </p>
         <MoneyInput
           label="Investment (eligible for §78 rebate)"
