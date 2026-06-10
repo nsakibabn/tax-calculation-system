@@ -61,7 +61,9 @@ export interface EmployeeTaxResult {
   grossTax: number;
   rebate: number;
   finalTaxBeforeMinimumTax: number;
-  minimumTax: number;
+  minimumTaxCandidate: number;   // configured floor for this taxpayer status (always populated)
+  minimumTaxApplied: number;     // floor actually applied: 0 when taxableIncome ≤ 0
+  minimumTax: number;            // = minimumTaxApplied (backward-compat alias)
   finalTax: number;
   monthlyTDS: number;
   investmentSuggestion: number;

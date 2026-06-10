@@ -12,7 +12,7 @@ Tax rules sourced from: **Official NBR Income Tax Paripatra 2025-2026** (21 Augu
 
 - React 19 + TypeScript
 - Vite (build tool)
-- Tailwind CSS (available, not yet applied in UI)
+- Tailwind CSS v4
 
 ---
 
@@ -37,11 +37,18 @@ src/
     helpers.ts                  — pure math utilities
     calculateEmployeeTax.ts     — main calculation function
     testCases.ts                — 18 console-based test cases
-  App.tsx                       — dev preview screen
+  components/
+    EmployeeTaxForm.tsx         — income input form
+    EmployeeTaxResultView.tsx   — tax result display
+    MoneyInput.tsx              — currency input field
+    ResultRow.tsx               — result row with visual variants
+  data/
+    taxpayerCategories.ts       — category labels for the form
+  utils/
+    formatMoney.ts              — ৳ formatting utilities
+  App.tsx                       — root component, wires form + result
 docs/
   nbr-income-tax-paripatra-2025-26.pdf   — official source PDF
-Architectures/
-  income-tax-calculator-architecture-package.zip
 ```
 
 ---
@@ -86,17 +93,17 @@ Architectures/
 
 ## Current Limitations
 
-1. **Investment rebate (§78)** — rebate constants (3% / 15% / 10-lakh cap) come from Income Tax Act 2023 §78, not restated in this Paripatra. Flagged `verified: false` in config.
+1. **Scope — salaried/employee income only.** Business income, house property income, capital gains, asset surcharge, and full return filing are not implemented yet.
 
-2. **Sanchayapatra** — added to gross income for display, but source tax is a final settlement (চূড়ান্ত করদায়). It is intentionally excluded from the slab tax base and from the §78 rebate base. The final-settlement source-tax credit is not yet modeled.
+2. **Sanchayapatra (সঞ্চয়পত্র).** Sanchayapatra income is shown separately in the gross income summary. However, final settlement/source-tax credit or adjustment for Sanchayapatra is not fully modeled yet. Therefore, Sanchayapatra-related results are indicative only.
 
-3. **Disabled child parent/guardian threshold** — should be taxpayer's primary category threshold + ৳50,000 per disabled child. Current model uses general + 50,000 = ৳4,25,000 (simplified). Requires primary category + child count inputs.
+3. **Salary exemption — simplified.** Salary exemption is currently simplified because detailed salary components such as basic salary, house rent allowance (HRA), medical allowance, conveyance allowance, and other allowances are not collected separately.
 
-4. **Salary components** — exemption uses total employment income (salary + bonus). HRA, medical, conveyance allowances are not split separately.
+4. **Monthly TDS — estimate only.** Monthly TDS is estimated as annual final tax divided by 12. Actual employer payroll deduction may differ based on employer policy, projected annual income, and income changes during the year.
 
-5. **Monthly TDS** — estimated as annual tax ÷ 12. Actual payroll TDS may differ.
+5. **Investment rebate (§78) — pending final verification.** Investment rebate currently uses configured values for 3% of eligible income, 15% of eligible investment, and a ৳10,00,000 cap. These values should be finally verified against Income Tax Act §78 and official NBR guidance before production use.
 
-6. **Business taxpayers** — not supported. Salaried/employed only.
+6. **Disabled child parent/guardian threshold — simplified.** The `disabledChildParentGuardian` category is simplified. Correct calculation may require the taxpayer's primary category and the number of eligible disabled children, which are not collected yet.
 
 ---
 
@@ -106,6 +113,7 @@ Architectures/
 |---|---|
 | Step 1 — Tax engine (pure TypeScript) | ✅ Done |
 | Step 2 — Verify rules against NBR Paripatra | ✅ Done |
-| Step 3 — Input form UI (Tailwind) | Pending |
+| Step 3 — Input form UI (Tailwind) | ✅ Done |
+| Step 3.1 — Core bug fix and stabilization | ✅ Done |
 | Step 4 — Report / PDF export | Pending |
 | Step 5 — Business taxpayer engine | Pending |

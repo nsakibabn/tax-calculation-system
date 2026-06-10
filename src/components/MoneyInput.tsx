@@ -18,8 +18,8 @@ export default function MoneyInput({
   helperText,
 }: MoneyInputProps) {
   const handleChange = (e: ChangeEvent<HTMLInputElement>) => {
-    const raw = parseFloat(e.target.value);
-    onChange(isFinite(raw) && raw >= 0 ? raw : 0);
+    const parsed = Number(e.target.value);
+    onChange(Number.isFinite(parsed) && parsed >= 0 ? parsed : 0);
   };
 
   return (

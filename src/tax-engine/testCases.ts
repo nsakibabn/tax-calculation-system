@@ -117,7 +117,7 @@ export const employeeTaxTestCases: TestCase[] = [
       investment: 300000, sanchayapatra: 0, taxpayerCategory: "general",
       isNewTaxpayer: true,
     },
-    expectedBehavior: "Income just above threshold. After large rebate, finalTaxBeforeMinimumTax near 0. minimumTax must be 1000 (new taxpayer), finalTax = 1000. Warning must mention 'new taxpayer rate'.",
+    expectedBehavior: "Income just above threshold. After large rebate, finalTaxBeforeMinimumTax near 0. minimumTaxCandidate = 1000, minimumTaxApplied = 1000, finalTax = 1000. Warning must mention 'new taxpayer rate'.",
   },
   {
     name: "Case 14 — Rebate base excludes sanchayapatra",

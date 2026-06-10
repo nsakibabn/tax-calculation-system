@@ -30,7 +30,7 @@ export default function EmployeeTaxResultView({ result }: EmployeeTaxResultViewP
       {/* Final Tax Summary — always visible */}
       <div className="px-6 py-5 bg-gray-50 border-b border-gray-200 grid grid-cols-2 gap-4">
         <div className="text-center bg-white rounded-lg border border-gray-200 py-4 px-2">
-          <p className="text-xs text-gray-500 mb-1 uppercase tracking-wide">Annual Tax</p>
+          <p className="text-xs text-gray-500 mb-1 uppercase tracking-wide">Estimated Annual Tax Payable</p>
           <p className="text-2xl font-bold text-gray-900">{formatMoney(result.finalTax)}</p>
         </div>
         <div className="text-center bg-white rounded-lg border border-blue-200 py-4 px-2">
@@ -38,6 +38,16 @@ export default function EmployeeTaxResultView({ result }: EmployeeTaxResultViewP
           <p className="text-2xl font-bold text-blue-700">{formatMoney(result.monthlyTDS)}</p>
         </div>
       </div>
+
+      {/* Sanchayapatra notice — shown whenever final-source-tax income is present */}
+      {result.finalTaxIncome > 0 && (
+        <div className="mx-6 my-3 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+          <p className="text-xs text-blue-800 leading-relaxed">
+            Sanchayapatra/source-tax income is shown separately. This calculator does not fully
+            model final settlement/source tax adjustment for Sanchayapatra.
+          </p>
+        </div>
+      )}
 
       {/* Scrollable detail sections */}
       <div className="overflow-y-auto" style={{ maxHeight: "60vh" }}>
@@ -85,10 +95,10 @@ export default function EmployeeTaxResultView({ result }: EmployeeTaxResultViewP
             label="Tax Before Minimum"
             value={formatMoney(result.finalTaxBeforeMinimumTax)}
           />
-          {result.finalTax !== result.finalTaxBeforeMinimumTax && (
+          {result.minimumTaxApplied > 0 && result.finalTax !== result.finalTaxBeforeMinimumTax && (
             <ResultRow
               label="Minimum Tax Floor Applied"
-              value={formatMoney(result.minimumTax)}
+              value={formatMoney(result.minimumTaxApplied)}
               danger
             />
           )}

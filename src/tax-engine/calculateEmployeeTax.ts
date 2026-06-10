@@ -48,7 +48,9 @@ export function calculateEmployeeTax(input: EmployeeTaxInput): EmployeeTaxResult
   const grossIncome = roundMoney(regularIncome + finalTaxIncome);
 
   if (sanchayapatra > 0 && rules.sanchayapatra.enabledAsIncomeInput) {
-    warnings.push(rules.sanchayapatra.warningNote);
+    warnings.push(
+      "Sanchayapatra/source-tax income is shown separately. Final settlement/source tax treatment is not fully modeled in this calculator."
+    );
   }
 
   // 5. Salary exemption — applied to employmentIncome ONLY.
@@ -121,22 +123,32 @@ export function calculateEmployeeTax(input: EmployeeTaxInput): EmployeeTaxResult
 
   // 13. Minimum tax — flat for AY 2026-27 (no location split).
   //     new taxpayer pays 1,000; general taxpayer pays 5,000.
-  //     Applied only when total income exceeds the tax-free threshold.
-  const minimumTaxAmount = isNewTaxpayer
+  //     Applied ONLY when regular taxable income exceeds the tax-free threshold
+  //     (taxableIncome > 0). Sanchayapatra-only income does NOT trigger minimum tax.
+  //
+  //   minimumTaxCandidate — configured floor for this taxpayer (always set, even when not applied)
+  //   minimumTaxApplied   — floor actually enforced: 0 when taxableIncome = 0
+  const minimumTaxCandidate = isNewTaxpayer
     ? clampMoney(rules.minimumTax.newTaxpayerAmount)
     : clampMoney(rules.minimumTax.generalAmount);
-  const minimumTax = minimumTaxAmount;
+
+  const minimumTaxApplies =
+    rules.minimumTax.enabled &&
+    rules.minimumTax.applyInCalculation &&
+    taxableIncome > 0;
+
+  const minimumTaxApplied = minimumTaxApplies ? minimumTaxCandidate : 0;
+  const minimumTax = minimumTaxApplied; // backward-compat alias
+
   let finalTax = finalTaxBeforeMinimumTax;
-  if (rules.minimumTax.enabled && rules.minimumTax.applyInCalculation) {
-    if (taxableIncome > 0) {
-      finalTax = Math.max(finalTaxBeforeMinimumTax, minimumTax);
-      if (finalTaxBeforeMinimumTax < minimumTax) {
-        warnings.push(
-          `Minimum tax applied: tax raised to ${minimumTax.toLocaleString()} (minimum${isNewTaxpayer ? " — new taxpayer rate" : ""}).`
-        );
-      }
+  if (minimumTaxApplies) {
+    finalTax = Math.max(finalTaxBeforeMinimumTax, minimumTaxApplied);
+    if (finalTaxBeforeMinimumTax < minimumTaxApplied) {
+      warnings.push(
+        `Minimum tax applied: tax raised to ${minimumTaxApplied.toLocaleString("en-US")} (floor${isNewTaxpayer ? " — new taxpayer rate" : ""}).`
+      );
     }
-  } else if (rules.minimumTax.enabled) {
+  } else if (rules.minimumTax.enabled && !rules.minimumTax.applyInCalculation) {
     warnings.push(
       "Minimum tax is defined but not applied in this calculation; verify location/applicability."
     );
@@ -149,16 +161,22 @@ export function calculateEmployeeTax(input: EmployeeTaxInput): EmployeeTaxResult
     warnings.push("Monthly TDS is estimated as final annual tax divided by 12.");
   }
 
-  // 15. Investment suggestion — how much more to invest to fully utilise the rebate ceiling.
-  const maxRebateCeiling = Math.min(
-    rebateEligibleIncome * investmentRebate.totalIncomeRate,
-    investmentRebate.maxRebate
-  );
-  const investmentForFullRebate =
-    investmentRebate.investmentRate > 0
-      ? maxRebateCeiling / investmentRebate.investmentRate
-      : 0;
-  const investmentSuggestion = clampMoney(investmentForFullRebate - investment);
+  // 15. Investment suggestion — additional investment that can still produce useful tax rebate.
+  //     Cap is grossTax because rebate can never exceed grossTax.
+  //     When grossTax = 0, the ceiling is 0 and suggestion is always 0.
+  let investmentSuggestion = 0;
+  if (investmentRebate.enabled) {
+    const maxUsefulRebate = Math.min(
+      grossTax,
+      rebateEligibleIncome * investmentRebate.totalIncomeRate,
+      investmentRebate.maxRebate
+    );
+    const investmentForUsefulRebate =
+      investmentRebate.investmentRate > 0
+        ? maxUsefulRebate / investmentRebate.investmentRate
+        : 0;
+    investmentSuggestion = clampMoney(investmentForUsefulRebate - investment);
+  }
 
   return {
     employmentIncome,
@@ -178,7 +196,9 @@ export function calculateEmployeeTax(input: EmployeeTaxInput): EmployeeTaxResult
     grossTax,
     rebate,
     finalTaxBeforeMinimumTax,
-    minimumTax,
+    minimumTaxCandidate,
+    minimumTaxApplied,
+    minimumTax, // = minimumTaxApplied (backward-compat alias)
     finalTax,
     monthlyTDS,
     investmentSuggestion,
