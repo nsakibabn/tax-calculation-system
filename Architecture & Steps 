@@ -1,0 +1,103 @@
+Development Sequence
+Phase 1 — Employee Tax Engine
+
+প্রথমে শুধু হিসাব।
+
+monthly salary
+yearly bonus
+other income
+investment
+sanchayapatra
+taxpayer category
+
+Output:
+
+salary income
+salary exemption
+taxable income
+slab breakdown
+gross tax
+rebate
+final tax
+monthly TDS
+investment suggestion
+Phase 2 — UI
+
+তারপর frontend:
+
+Step 1: Income input
+Step 2: Investment input
+Step 3: Result
+Step 4: Smart advice
+
+UI হবে clean, accounting-style, যেন অফিসে ব্যবহার করা যায়।
+
+Phase 3 — Report
+
+তারপর:
+
+Print report
+PDF export
+Calculation summary
+Phase 4 — Business Taxpayer
+
+চাকরিজীবীদের হিসাব perfect হলে:
+
+business income
+expense
+net profit
+allowable deduction
+slab
+rebate
+minimum tax
+Phase 5 — Advanced
+
+পরে add করা যাবে:
+
+TDS adjustment
+sanchayapatra interest
+bank interest
+house property income
+asset surcharge
+return-ready summary
+database save
+login
+admin panel
+আমার Final Recommendation
+
+আমরা এখন এই stack নেবো:
+
+React + TypeScript + Vite + Tailwind + Vitest
+
+কারণ এটা সবচেয়ে দ্রুত, clean, testable এবং calculation-accuracy friendly।
+
+এই project-এর সবচেয়ে গুরুত্বপূর্ণ rule:
+
+আগে tax-engine বানাবো।
+তারপর test লিখবো।
+তারপর UI বানাবো।
+
+UI আগে বানালে দেখতে সুন্দর হবে, কিন্তু হিসাব ভুল হতে পারে।
+Engine আগে বানালে হিসাব locked থাকবে, পরে design যত ইচ্ছা improve করা যাবে।
+
+কাজ শুরু করার আগে আমার Architecture Decision
+
+আমি এই project-কে ৩টা layer-এ ভাগ করবো:
+
+1. Tax Rules Layer
+   - rates
+   - slabs
+   - thresholds
+   - rebate limits
+
+2. Calculation Engine Layer
+   - pure functions
+   - no UI
+   - no database
+   - testable
+
+3. Presentation Layer
+   - form
+   - result table
+   - explanation
+   - investment advice
