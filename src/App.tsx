@@ -44,7 +44,7 @@ export default function App() {
         </div>
 
         <footer className="mt-8 text-center text-xs text-gray-400">
-          Rules verified against NBR Income Tax Paripatra 2025-2026 · AY 2026-2027
+          Core slab and threshold rules are based on NBR Income Tax Paripatra 2025-2026 · AY 2026-2027 · Some items are simplified — development preview
         </footer>
       </div>
     </div>

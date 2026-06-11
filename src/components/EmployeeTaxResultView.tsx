@@ -108,16 +108,23 @@ export default function EmployeeTaxResultView({ result }: EmployeeTaxResultViewP
         {/* 3. Tax Calculation */}
         <Section title="Tax Calculation">
           <ResultRow label="Gross Tax" value={formatMoney(result.grossTax)} />
-          {result.calculatedRebate > 0 && (
+          {result.effectiveRebate > 0 && (
             <ResultRow
-              label="Investment Rebate (§78)"
-              value={`− ${formatMoney(result.calculatedRebate)}`}
+              label="Effective Investment Rebate (§78)"
+              value={`− ${formatMoney(result.effectiveRebate)}`}
+              muted
+            />
+          )}
+          {result.minimumTaxFloorIsBinding && result.calculatedRebate > result.effectiveRebate && (
+            <ResultRow
+              label="Theoretical Rebate Before Minimum Floor"
+              value={formatMoney(result.calculatedRebate)}
               muted
             />
           )}
           {result.minimumTaxFloorIsBinding && (
             <ResultRow
-              label="Tax Before Minimum"
+              label="Tax Before Minimum Floor"
               value={formatMoney(result.finalTaxBeforeMinimumTax)}
             />
           )}

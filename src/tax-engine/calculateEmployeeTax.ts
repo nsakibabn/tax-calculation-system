@@ -137,9 +137,10 @@ export function calculateEmployeeTax(input: EmployeeTaxInput): EmployeeTaxResult
     }
   }
 
-  // rebate capped at taxReductionCapacity — cannot reduce tax below the minimum floor.
+  // effectiveRebate capped at taxReductionCapacity — cannot reduce tax below the minimum floor.
   const taxReductionCapacity = Math.max(grossTax - minimumTaxApplied, 0);
-  const rebate = Math.min(calculatedRebate, taxReductionCapacity);
+  const effectiveRebate = Math.min(calculatedRebate, taxReductionCapacity);
+  const rebate = effectiveRebate; // backward-compatible alias
 
   // 13. Tax after rebate, then minimum floor.
   //     finalTaxBeforeMinimumTax — theoretical tax with full §78 rebate applied, ignoring the floor.
@@ -199,6 +200,7 @@ export function calculateEmployeeTax(input: EmployeeTaxInput): EmployeeTaxResult
     slabBreakdown,
     grossTax,
     calculatedRebate,
+    effectiveRebate,
     rebate,
     finalTaxBeforeMinimumTax,
     minimumTaxFloorIsBinding,
