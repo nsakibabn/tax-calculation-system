@@ -117,7 +117,7 @@ export default function EmployeeTaxResultView({ result }: EmployeeTaxResultViewP
           )}
           {result.minimumTaxFloorIsBinding && (
             <ResultRow
-              label="Minimum Tax Applied"
+              label="Minimum Tax Floor"
               value={formatMoney(result.minimumTaxApplied)}
               danger
             />
