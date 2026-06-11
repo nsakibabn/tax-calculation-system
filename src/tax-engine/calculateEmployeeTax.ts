@@ -61,6 +61,11 @@ export function calculateEmployeeTax(input: EmployeeTaxInput): EmployeeTaxResult
         rules.salaryExemption.maxExemption
       )
     );
+    warnings.push(
+      "Salary exemption is simplified: calculated as one-third of total employment income " +
+      "(salary + bonus), capped at ৳5,00,000. Actual exemption may differ if individual " +
+      "salary components (basic, HRA, medical, conveyance, etc.) are considered separately."
+    );
   }
 
   // 6. Regular income after salary exemption.
