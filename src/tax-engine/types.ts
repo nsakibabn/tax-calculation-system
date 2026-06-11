@@ -58,7 +58,7 @@ export interface EmployeeTaxResult {
   // Tax calculation
   slabBreakdown: SlabBreakdownItem[];
   grossTax: number;
-  calculatedRebate: number;      // §78 formula result — may be partially blocked by minimum tax floor
+  calculatedRebate: number;      // §78 formula capped at grossTax (displayed in UI); effectiveRebate = min(this, taxReductionCapacity)
   rebate: number;                // = effectiveRebate: actual tax reduction after floor constraint
   finalTaxBeforeMinimumTax: number; // grossTax − calculatedRebate (theoretical pre-floor tax)
   minimumTaxFloorIsBinding: boolean; // true when floor actively raised final tax above post-rebate amount

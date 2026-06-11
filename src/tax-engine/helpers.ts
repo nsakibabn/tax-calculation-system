@@ -49,7 +49,7 @@ export function calculateSlabTax(
       label: slab.label,
     });
 
-    grossTax += tax;
+    grossTax += slabAmount * slab.rate; // accumulate exact — round once at end to avoid per-slab drift
     cursor += slabAmount;
     remaining -= slabAmount;
   }

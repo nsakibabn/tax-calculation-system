@@ -70,11 +70,15 @@ export default function EmployeeTaxResultView({ result }: EmployeeTaxResultViewP
           {result.yearlyBonus > 0 && (
             <ResultRow label="Yearly Bonus" value={formatMoney(result.yearlyBonus)} />
           )}
-          <ResultRow label="Employment Income" value={formatMoney(result.employmentIncome)} />
+          {result.yearlyBonus > 0 && (
+            <ResultRow label="Employment Income" value={formatMoney(result.employmentIncome)} />
+          )}
           {result.otherIncome > 0 && (
             <ResultRow label="Other Income" value={formatMoney(result.otherIncome)} />
           )}
-          <ResultRow label="Regular Income (slab-taxable)" value={formatMoney(result.regularIncome)} />
+          {(result.otherIncome > 0 || result.sanchayapatra > 0) && (
+            <ResultRow label="Regular Income (slab-taxable)" value={formatMoney(result.regularIncome)} />
+          )}
           {result.sanchayapatra > 0 && (
             <ResultRow
               label="Sanchayapatra (final-settlement)"
@@ -87,10 +91,18 @@ export default function EmployeeTaxResultView({ result }: EmployeeTaxResultViewP
 
         {/* 2. Taxable Income */}
         <Section title="Taxable Income">
-          <ResultRow label="Salary Exemption" value={`− ${formatMoney(result.salaryExemption)}`} muted />
+          {result.salaryExemption > 0 && (
+            <ResultRow label="Salary Exemption" value={`− ${formatMoney(result.salaryExemption)}`} muted />
+          )}
           <ResultRow label="Income After Exemption" value={formatMoney(result.rebateEligibleIncome)} />
           <ResultRow label="Tax-Free Threshold" value={`− ${formatMoney(result.taxFreeThreshold)}`} muted />
-          <ResultRow label="Taxable Income" value={formatMoney(result.taxableIncome)} highlight />
+          <ResultRow
+            label="Taxable Income"
+            value={result.taxableIncome === 0 && result.rebateEligibleIncome > 0
+              ? "৳0 — below threshold"
+              : formatMoney(result.taxableIncome)}
+            highlight
+          />
         </Section>
 
         {/* 3. Tax Calculation */}
@@ -103,7 +115,7 @@ export default function EmployeeTaxResultView({ result }: EmployeeTaxResultViewP
               muted
             />
           )}
-          {result.minimumTaxFloorIsBinding && result.calculatedRebate > 0 && (
+          {result.minimumTaxFloorIsBinding && (
             <ResultRow
               label="Tax Before Minimum"
               value={formatMoney(result.finalTaxBeforeMinimumTax)}
@@ -122,7 +134,6 @@ export default function EmployeeTaxResultView({ result }: EmployeeTaxResultViewP
 
         {/* 4. Investment Advice */}
         <Section title="Investment Advice (§78)">
-          <ResultRow label="Rebate Eligible Income" value={formatMoney(result.rebateEligibleIncome)} />
           {result.rebateEligibleIncome > 0 ? (
             <ResultRow
               label="Additional Investment Suggested"

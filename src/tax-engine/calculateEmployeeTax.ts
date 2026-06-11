@@ -69,6 +69,10 @@ export function calculateEmployeeTax(input: EmployeeTaxInput): EmployeeTaxResult
   const regularIncomeAfterSalaryExemption = clampMoney(regularIncome - salaryExemption);
 
   // 7. Rebate eligible income — no final-tax income, no threshold deduction yet.
+  //    Paripatra item 19 excludes tax-exempt income from the §78 base. Salary exemption (above)
+  //    is excluded. Open question: does the tax-free threshold band also qualify as tax-exempt
+  //    income? If yes, base should be taxableIncome (line 87). If no, base is here (pre-threshold).
+  //    Verify against Income Tax Act 2023 §78 before changing. Currently uses pre-threshold base.
   const rebateEligibleIncome = regularIncomeAfterSalaryExemption;
 
   // 8. Tax-free threshold by category

@@ -84,7 +84,7 @@ export const employeeTaxTestCases: TestCase[] = [
       monthlySalary: 200000, yearlyBonus: 400000, otherIncome: 200000,
       investment: 500000, sanchayapatra: 0, taxpayerCategory: "general",
     },
-    expectedBehavior: "slabBreakdown has multiple taxable slabs (5/10/15/20/25%...); large rebate from investment.",
+    expectedBehavior: "slabBreakdown has multiple taxable slabs (10/15/20/25/30%); large rebate from investment.",
   },
   {
     name: "Case 10 — Negative / invalid input",
