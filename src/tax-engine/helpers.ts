@@ -23,12 +23,13 @@ export function calculateSlabTax(
   taxableIncome: number,
   slabs: readonly TaxSlab[]
 ): { grossTax: number; slabBreakdown: SlabBreakdownItem[] } {
-  if (taxableIncome <= 0) {
+  const income = clampMoney(taxableIncome);
+  if (income <= 0) {
     return { grossTax: 0, slabBreakdown: [] };
   }
 
   const breakdown: SlabBreakdownItem[] = [];
-  let remaining = taxableIncome;
+  let remaining = income;
   let cursor = 0;
   let grossTax = 0;
 
@@ -49,7 +50,7 @@ export function calculateSlabTax(
       label: slab.label,
     });
 
-    grossTax += slabAmount * slab.rate; // accumulate exact — round once at end to avoid per-slab drift
+    grossTax += tax; // sum of per-slab rounded values keeps table rows and Total consistent
     cursor += slabAmount;
     remaining -= slabAmount;
   }
