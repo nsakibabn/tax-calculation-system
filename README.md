@@ -24,8 +24,44 @@ npm run dev       # development server (localhost:5173)
 npm run build     # production build
 npm test          # run Vitest golden tests
 npm run lint      # ESLint check
+npm run verify    # build + lint + test in one command
 npm run zip       # create clean source zip (no node_modules/dist/.git)
 ```
+
+---
+
+## Packaging & Distribution
+
+**IMPORTANT — do not manually zip the project folder.** Manual zips include `node_modules` (≈120 MB), `dist`, `.git`, and nested zip files that break `npm run build` after extraction.
+
+### Correct way to create a shareable zip
+
+```bash
+npm run zip
+```
+
+This runs `scripts/create-source-zip.mjs`, which calls `git archive` to produce a clean zip in the parent directory (`../income-tax-calculator-source.zip`). It automatically excludes `node_modules`, `dist`, `.git`, `.env`, and any `.zip` files.
+
+> **Note:** Only committed files are included. Run `git add -A && git commit` before zipping if you have changes you want to share.
+
+### After extracting a received zip
+
+**Linux / macOS / Git Bash:**
+```bash
+rm -rf node_modules dist
+npm install
+npm run verify
+```
+
+**Windows CMD:**
+```cmd
+rmdir /s /q node_modules
+rmdir /s /q dist
+npm install
+npm run verify
+```
+
+If `npm run build` fails with errors like `Cannot find module '../lib/tsc.js'`, the zip still contained `node_modules`. Delete it and reinstall: `rm -rf node_modules && npm install`.
 
 ---
 

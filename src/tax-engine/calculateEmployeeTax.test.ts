@@ -104,9 +104,9 @@ describe('calculateEmployeeTax — golden tests (AY 2026-27)', () => {
 
   // ─── Case 8: Salary + Sanchayapatra ───────────────────────────────────────
   it('salary + sanchayapatra — sanchayapatra absent from slab base', () => {
+    // annualSalary=960k, exemption=320k, taxable=265k — sanchayapatra 2M excluded
     const r = calculateEmployeeTax({ ...BASE, monthlySalary: 80000, sanchayapatra: 2000000 })
-    const slabTotal = r.slabBreakdown.reduce((s, x) => s + x.slabAmount, 0)
-    expect(slabTotal).toBe(r.taxableIncome)          // sanchayapatra not in slabs
+    expect(r.taxableIncome).toBe(265000)             // 960k − 320k exemption − 375k threshold
     expect(r.finalTaxIncome).toBe(2000000)
     expect(r.warnings.some(w => /sanchayapatra/i.test(w))).toBe(true)
   })
@@ -162,5 +162,50 @@ describe('calculateEmployeeTax — golden tests (AY 2026-27)', () => {
         expect(v).toBeGreaterThanOrEqual(0)
       }
     }
+  })
+
+  // ─── Case 14: Unknown category fallback ───────────────────────────────────
+  it('unknown taxpayerCategory falls back to general (375k) with warning', () => {
+    const r = calculateEmployeeTax({ ...BASE, taxpayerCategory: 'invalid_cat' as never })
+    expect(r.taxFreeThreshold).toBe(375000)
+    expect(r.warnings.some(w => /unknown taxpayer category/i.test(w))).toBe(true)
+  })
+
+  // ─── Case 15: Alternative threshold tiers ─────────────────────────────────
+  it('female and senior taxpayer threshold is 425k', () => {
+    const female = calculateEmployeeTax({ ...BASE, taxpayerCategory: 'female' })
+    const senior = calculateEmployeeTax({ ...BASE, taxpayerCategory: 'senior' })
+    expect(female.taxFreeThreshold).toBe(425000)
+    expect(senior.taxFreeThreshold).toBe(425000)
+  })
+
+  it('disabled and thirdGender taxpayer threshold is 500k', () => {
+    const disabled = calculateEmployeeTax({ ...BASE, taxpayerCategory: 'disabled' })
+    const thirdGender = calculateEmployeeTax({ ...BASE, taxpayerCategory: 'thirdGender' })
+    expect(disabled.taxFreeThreshold).toBe(500000)
+    expect(thirdGender.taxFreeThreshold).toBe(500000)
+  })
+
+  it('freedomFighter and julyWarrior taxpayer threshold is 525k', () => {
+    const ff = calculateEmployeeTax({ ...BASE, taxpayerCategory: 'freedomFighter' })
+    const jw = calculateEmployeeTax({ ...BASE, taxpayerCategory: 'julyWarrior' })
+    expect(ff.taxFreeThreshold).toBe(525000)
+    expect(jw.taxFreeThreshold).toBe(525000)
+  })
+
+  // ─── Case 16: otherIncome excluded from salaryExemption ───────────────────
+  it('otherIncome does NOT inflate salaryExemption — only employmentIncome counts', () => {
+    // annualSalary=600k, exemption=min(600k/3,500k)=200k — otherIncome 120k is ignored
+    const r = calculateEmployeeTax({ ...BASE, monthlySalary: 50000, otherIncome: 120000 })
+    expect(r.salaryExemption).toBe(200000)
+    expect(r.rebateEligibleIncome).toBe(520000)      // 720k regularIncome − 200k exemption
+  })
+
+  // ─── Case 17: investmentSuggestion with partial existing investment ────────
+  it('investmentSuggestion correctly subtracts existing investment', () => {
+    // grossTax=9167, floor=5000, taxReductionCapacity=4167, maxUsefulRebate=4167
+    // investmentNeeded = 4167/0.15 = 27780; already invested 10000 → suggest 17780
+    const r = calculateEmployeeTax({ ...BASE, monthlySalary: 50000, yearlyBonus: 100000, investment: 10000 })
+    expect(r.investmentSuggestion).toBe(17780)
   })
 })

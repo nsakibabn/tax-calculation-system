@@ -1,2 +1,7 @@
-# Files to exclude from `git archive` (npm run zip)
-*.zip export-ignore
+# Files and directories to exclude from `git archive` (used by `npm run zip`)
+*.zip        export-ignore
+node_modules export-ignore
+dist         export-ignore
+coverage     export-ignore
+.env         export-ignore
+.DS_Store    export-ignore

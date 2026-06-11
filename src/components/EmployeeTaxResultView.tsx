@@ -24,6 +24,11 @@ export default function EmployeeTaxResultView({ result }: EmployeeTaxResultViewP
     if (result.grossTax <= 0) return "No tax to reduce";
     if (result.minimumTaxApplied > 0 && result.grossTax <= result.minimumTaxApplied)
       return "Tax is at the minimum floor — no rebate headroom";
+    if (
+      result.minimumTaxApplied > 0 &&
+      result.finalTax === result.minimumTaxApplied &&
+      result.grossTax > result.minimumTaxApplied
+    ) return "Tax has reached the minimum floor";
     if (result.minimumTaxFloorIsBinding)
       return "Further rebate limited by minimum tax floor";
     if (result.investmentSuggestion > 0) return formatMoney(result.investmentSuggestion);
@@ -75,7 +80,7 @@ export default function EmployeeTaxResultView({ result }: EmployeeTaxResultViewP
           {result.otherIncome > 0 && (
             <ResultRow label="Other Income" value={formatMoney(result.otherIncome)} />
           )}
-          {(result.otherIncome > 0 || result.sanchayapatra > 0) && (
+          {result.otherIncome > 0 && (
             <ResultRow label="Regular Income (slab-taxable)" value={formatMoney(result.regularIncome)} />
           )}
           {result.sanchayapatra > 0 && (
@@ -94,7 +99,11 @@ export default function EmployeeTaxResultView({ result }: EmployeeTaxResultViewP
             <ResultRow label="Salary Exemption" value={`− ${formatMoney(result.salaryExemption)}`} muted />
           )}
           <ResultRow label="Regular Income After Salary Exemption" value={formatMoney(result.rebateEligibleIncome)} />
-          <ResultRow label="Tax-Free Threshold" value={`− ${formatMoney(result.taxFreeThreshold)}`} muted />
+          <ResultRow
+            label="Tax-Free Threshold"
+            value={`− ${formatMoney(Math.min(result.taxFreeThreshold, result.rebateEligibleIncome))}`}
+            muted
+          />
           <ResultRow
             label="Taxable Income"
             value={result.taxableIncome === 0 && result.rebateEligibleIncome > 0
@@ -117,7 +126,7 @@ export default function EmployeeTaxResultView({ result }: EmployeeTaxResultViewP
           {result.minimumTaxFloorIsBinding && (
             <ResultRow
               label="Minimum Tax Floor"
-              value={formatMoney(result.minimumTaxApplied)}
+              value={`≥ ${formatMoney(result.minimumTaxApplied)}`}
               danger
             />
           )}
@@ -176,7 +185,7 @@ export default function EmployeeTaxResultView({ result }: EmployeeTaxResultViewP
                   ))}
                   <tr className="bg-gray-50">
                     <td colSpan={3} className="py-2 px-3 text-sm font-semibold text-gray-700">
-                      Total
+                      Gross Tax
                     </td>
                     <td className="py-2 px-3 text-right font-mono font-bold text-gray-900">
                       {formatMoney(result.grossTax)}

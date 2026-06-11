@@ -10,7 +10,8 @@
     "preview": "vite preview",
     "test": "vitest run",
     "test:watch": "vitest",
-    "zip": "git archive --worktree-attributes --format=zip --output=../income-tax-calculator-source.zip HEAD && echo 'Created: ../income-tax-calculator-source.zip'"
+    "verify": "npm run build && npm run lint && npm run test",
+    "zip": "node scripts/create-source-zip.mjs"
   },
   "dependencies": {
     "@tailwindcss/vite": "^4.3.0",
