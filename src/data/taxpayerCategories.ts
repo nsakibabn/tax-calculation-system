@@ -13,5 +13,7 @@ export const TAXPAYER_CATEGORIES: CategoryOption[] = [
   { value: "freedomFighter",              label: "Freedom Fighter (Gazetted)" },
   { value: "thirdGender",                 label: "Third Gender" },
   { value: "julyWarrior",                 label: "July Warrior (Injured)" },
-  { value: "disabledChildParentGuardian", label: "Parent/Guardian of Disabled Child" },
+  // disabledChildParentGuardian omitted from UI: threshold requires primary category +
+  // disabled-child count as inputs, which this form does not collect. Engine still
+  // supports the type; re-add here once those fields are implemented.
 ];

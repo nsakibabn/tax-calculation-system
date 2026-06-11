@@ -157,7 +157,7 @@ export function calculateEmployeeTax(input: EmployeeTaxInput): EmployeeTaxResult
   if (minimumTaxApplies) {
     if (minimumTaxFloorIsBinding) {
       warnings.push(
-        `Minimum tax applied: tax raised to ${minimumTaxApplied.toLocaleString("en-US")} (floor${isNewTaxpayer ? " — new taxpayer rate" : ""}).`
+        `Minimum tax floor applied${isNewTaxpayer ? " (new taxpayer rate)" : ""}.`
       );
     }
   } else if (rules.minimumTax.enabled && !rules.minimumTax.applyInCalculation) {
