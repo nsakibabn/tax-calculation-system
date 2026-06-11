@@ -47,7 +47,7 @@ export default function EmployeeTaxResultView({ result }: EmployeeTaxResultViewP
       <div className="px-6 py-5 bg-gray-50 border-b border-gray-200 grid grid-cols-2 gap-4">
         <div className="text-center bg-white rounded-lg border border-gray-200 py-4 px-2">
           <p className="text-xs text-gray-500 mb-1 uppercase tracking-wide">
-            {result.finalTaxIncome > 0 ? "Estimated Regular Income Tax" : "Estimated Annual Tax Payable"}
+            Estimated Annual Tax Payable
           </p>
           <p className="text-2xl font-bold text-gray-900">{formatMoney(result.finalTax)}</p>
         </div>
@@ -57,15 +57,6 @@ export default function EmployeeTaxResultView({ result }: EmployeeTaxResultViewP
         </div>
       </div>
 
-      {/* Sanchayapatra notice — shown whenever final-source-tax income is present */}
-      {result.finalTaxIncome > 0 && (
-        <div className="mx-6 my-3 p-3 bg-blue-50 border border-blue-200 rounded-lg">
-          <p className="text-xs text-blue-800 leading-relaxed">
-            Sanchayapatra/source-tax income is shown separately. This calculator does not fully
-            model final settlement/source-tax credit or adjustment for Sanchayapatra.
-          </p>
-        </div>
-      )}
 
       {/* Scrollable detail sections */}
       <div className="overflow-y-auto" style={{ maxHeight: "60vh" }}>
@@ -80,15 +71,11 @@ export default function EmployeeTaxResultView({ result }: EmployeeTaxResultViewP
           {result.otherIncome > 0 && (
             <ResultRow label="Other Income" value={formatMoney(result.otherIncome)} />
           )}
-          {result.otherIncome > 0 && (
-            <ResultRow label="Regular Income (slab-taxable)" value={formatMoney(result.regularIncome)} />
-          )}
           {result.sanchayapatra > 0 && (
-            <ResultRow
-              label="Sanchayapatra (final-settlement)"
-              value={formatMoney(result.sanchayapatra)}
-              muted
-            />
+            <ResultRow label="Sanchayapatra" value={formatMoney(result.sanchayapatra)} />
+          )}
+          {(result.otherIncome > 0 || result.sanchayapatra > 0) && (
+            <ResultRow label="Regular Income" value={formatMoney(result.regularIncome)} />
           )}
           <ResultRow label="Gross Income" value={formatMoney(result.grossIncome)} />
         </Section>
@@ -120,6 +107,27 @@ export default function EmployeeTaxResultView({ result }: EmployeeTaxResultViewP
             <ResultRow
               label="Effective Investment Rebate (§78)"
               value={`− ${formatMoney(result.effectiveRebate)}`}
+              muted
+            />
+          )}
+          {result.sanchayapatraTaxCredit > 0 && (
+            <ResultRow
+              label="Sanchayapatra Tax Credit (15%)"
+              value={`− ${formatMoney(result.sanchayapatraTaxCredit)}`}
+              muted
+            />
+          )}
+          {result.effectiveRebate > 0 && result.sanchayapatraTaxCredit > 0 && (
+            <ResultRow
+              label="Total Tax Reduction"
+              value={`− ${formatMoney(result.totalTaxReduction)}`}
+              muted
+            />
+          )}
+          {result.minimumTaxFloorIsBinding && (
+            <ResultRow
+              label="Tax Before Minimum Floor"
+              value={formatMoney(result.finalTaxBeforeMinimumTax)}
               muted
             />
           )}

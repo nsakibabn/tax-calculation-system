@@ -111,16 +111,21 @@ export const bdTaxRules2025_26: TaxRules = {
   },
 
   // ---------------------------------------------------------------------------
-  // 6. Sanchayapatra (সঞ্চয়পত্র) — included in income, but source tax is FINAL
+  // 6. Sanchayapatra (সঞ্চয়পত্র) — included in regular income with 15% credit
+  //    PROJECT RULE: Sanchayapatra is treated as regular income and a 15% credit
+  //    is applied to reduce tax. This simplifies the official source-tax-final-
+  //    settlement treatment. Verify against official NBR guidance before production.
   // ---------------------------------------------------------------------------
   sanchayapatra: {
     enabledAsIncomeInput: true,
     verified: false,
-    treatment: "added_to_total_income_simplified",
+    includedInRegularIncome: true,
+    taxCreditRate: 0.15,
+    treatment: "included_in_regular_income_with_credit",
     sourceNote:
-      "PARTIALLY VERIFIED — Paripatra Example 12 (printed p.47) includes sanchayapatra profit in total income, but the source tax withheld on it is treated as FINAL settlement (চূড়ান্ত করদায়) — it is not refundable and not re-taxed. This engine adds the amount to income but does NOT yet model the final-settlement source-tax credit. TODO: model source-tax-as-final-discharge for sanchayapatra.",
+      "PROJECT RULE (unverified) — Sanchayapatra profit is included with regular income and a 15% tax credit is applied (sanchayapatraTaxCredit = amount × 0.15). The official treatment per Paripatra Example 12 (p.47) is that source tax on sanchayapatra is a FINAL settlement (চূড়ান্ত করদায়) — not re-taxed, not refunded, credit not adjustable. This simplified approach should be verified against Income Tax Act 2023 and official NBR guidance before production use.",
     warningNote:
-      "Sanchayapatra is added to total income, but its source tax is a FINAL settlement that this engine does not yet credit separately. Treat the sanchayapatra portion of the result as indicative only.",
+      "Sanchayapatra is included with regular income and a 15% tax credit is applied as a project rule. This is a simplification — verify against official NBR guidance before production use.",
   },
 
   // ---------------------------------------------------------------------------

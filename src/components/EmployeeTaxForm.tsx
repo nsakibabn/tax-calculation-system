@@ -72,7 +72,7 @@ export default function EmployeeTaxForm({
           value={value.sanchayapatra}
           onChange={(v) => update({ sanchayapatra: v })}
           placeholder="0"
-          helperText="Sanchayapatra treatment may depend on final tax/source tax rules."
+          helperText="Included with regular income; a 15% tax credit is applied (project rule — verify before production use)."
         />
       </div>
 

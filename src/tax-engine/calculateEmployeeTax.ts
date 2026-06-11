@@ -35,19 +35,18 @@ export function calculateEmployeeTax(input: EmployeeTaxInput): EmployeeTaxResult
   // 3. Annual salary
   const annualSalary = roundMoney(monthlySalary * 12);
 
-  // 4. Income stream separation
+  // 4. Income streams
   //
-  //   employmentIncome — salary + bonus ("চাকরি হইতে আয়"). Base for salary exemption.
-  //   finalTaxIncome   — sanchayapatra. Source tax is FINAL settlement (চূড়ান্ত করদায়).
-  //                      NOT slab-taxed. NOT included in rebate base.
-  //   regularIncome    — all income subject to progressive slabs (no sanchayapatra).
-  //   grossIncome      — total income including final-tax items.
+  //   employmentIncome — salary + bonus ("চাকরি হইতে আয়"). Base for salary exemption only.
+  //   finalTaxIncome   — always 0. Sanchayapatra is now merged into regularIncome.
+  //   regularIncome    — all slab-taxable income: employment + other + sanchayapatra.
+  //   grossIncome      — equals regularIncome (no separate final-settlement stream).
   const employmentIncome = roundMoney(annualSalary + yearlyBonus);
-  const finalTaxIncome = roundMoney(sanchayapatra);
-  const regularIncome = roundMoney(employmentIncome + otherIncome);
-  const grossIncome = roundMoney(regularIncome + finalTaxIncome);
+  const finalTaxIncome = 0;
+  const regularIncome = roundMoney(employmentIncome + otherIncome + sanchayapatra);
+  const grossIncome = regularIncome;
 
-  if (sanchayapatra > 0 && rules.sanchayapatra.enabledAsIncomeInput) {
+  if (sanchayapatra > 0) {
     warnings.push(rules.sanchayapatra.warningNote);
   }
 
@@ -142,16 +141,29 @@ export function calculateEmployeeTax(input: EmployeeTaxInput): EmployeeTaxResult
     }
   }
 
-  // effectiveRebate capped at taxReductionCapacity — cannot reduce tax below the minimum floor.
+  // effectiveRebate capped at taxReductionCapacity — investment rebate cannot alone reduce tax below floor.
   const taxReductionCapacity = Math.max(grossTax - minimumTaxApplied, 0);
   const effectiveRebate = Math.min(calculatedRebate, taxReductionCapacity);
   const rebate = effectiveRebate; // backward-compatible alias
 
-  // 13. Tax after rebate, then minimum floor.
-  //     finalTaxBeforeMinimumTax — theoretical tax with full §78 rebate applied, ignoring the floor.
-  //     minimumTaxFloorIsBinding — true only when the floor actively raises the final tax.
-  const finalTaxBeforeMinimumTax = clampMoney(grossTax - calculatedRebate);
-  const minimumTaxFloorIsBinding = minimumTaxApplied > 0 && finalTaxBeforeMinimumTax < minimumTaxApplied;
+  // 13. Sanchayapatra tax credit (PROJECT RULE: 15% of sanchayapatra amount).
+  //     Applied after investment rebate. Credit rate is from taxRules config.
+  const sanchayapatraTaxCredit = clampMoney(sanchayapatra * rules.sanchayapatra.taxCreditRate);
+  const totalTaxReduction = clampMoney(effectiveRebate + sanchayapatraTaxCredit);
+
+  // 14. Final tax calculation.
+  //     Calculation order:
+  //       (a) Apply investment rebate (effectiveRebate) to grossTax.
+  //       (b) Apply sanchayapatra credit to the result.
+  //       (c) Clamp to ≥ 0 → finalTaxBeforeMinimumTax.
+  //       (d) Apply minimum tax floor: finalTax = max(finalTaxBeforeMinimumTax, minimumTaxApplied).
+  //
+  //     minimumTaxFloorIsBinding uses finalTaxTheoretical (full calculatedRebate + credit, no floor)
+  //     to detect whether the floor is needed — consistent with how calculatedRebate represents
+  //     the full theoretical §78 entitlement.
+  const finalTaxBeforeMinimumTax = clampMoney(grossTax - effectiveRebate - sanchayapatraTaxCredit);
+  const finalTaxTheoretical = clampMoney(grossTax - calculatedRebate - sanchayapatraTaxCredit);
+  const minimumTaxFloorIsBinding = minimumTaxApplied > 0 && finalTaxTheoretical < minimumTaxApplied;
   const finalTax = clampMoney(Math.max(finalTaxBeforeMinimumTax, minimumTaxApplied));
 
   if (minimumTaxApplies) {
@@ -173,12 +185,13 @@ export function calculateEmployeeTax(input: EmployeeTaxInput): EmployeeTaxResult
   }
 
   // 15. Investment suggestion — how much MORE to invest to exhaust all useful rebate headroom.
-  //     Headroom = taxReductionCapacity = max(grossTax - minimumTaxApplied, 0).
-  //     When floor consumes all headroom (grossTax ≤ minimumTaxApplied), suggestion = 0.
+  //     Remaining capacity for investment rebate = total capacity minus sanchayapatra credit already used.
+  //     When sanchayapatra credit fills all headroom, or floor leaves no room, suggestion = 0.
   let investmentSuggestion = 0;
   if (investmentRebate.enabled) {
+    const remainingCapacityForRebate = Math.max(taxReductionCapacity - sanchayapatraTaxCredit, 0);
     const maxUsefulRebate = Math.min(
-      taxReductionCapacity,
+      remainingCapacityForRebate,
       rebateEligibleIncome * investmentRebate.totalIncomeRate,
       investmentRebate.maxRebate
     );
@@ -207,6 +220,8 @@ export function calculateEmployeeTax(input: EmployeeTaxInput): EmployeeTaxResult
     calculatedRebate,
     effectiveRebate,
     rebate,
+    sanchayapatraTaxCredit,
+    totalTaxReduction,
     finalTaxBeforeMinimumTax,
     minimumTaxFloorIsBinding,
     minimumTaxCandidate,

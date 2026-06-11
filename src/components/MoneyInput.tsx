@@ -18,7 +18,12 @@ export default function MoneyInput({
   helperText,
 }: MoneyInputProps) {
   const handleChange = (e: ChangeEvent<HTMLInputElement>) => {
-    const parsed = Number(e.target.value);
+    const raw = e.target.value;
+    if (raw.trim() === "") {
+      onChange(0);
+      return;
+    }
+    const parsed = Number(raw);
     onChange(Number.isFinite(parsed) && parsed >= 0 ? parsed : 0);
   };
 
@@ -35,8 +40,9 @@ export default function MoneyInput({
           id={name}
           name={name}
           type="number"
+          inputMode="numeric"
           min="0"
-          value={value}
+          value={value === 0 ? "" : String(value)}
           onChange={handleChange}
           placeholder={placeholder ?? "0"}
           className="w-full pl-7 pr-3 py-2 border border-gray-300 rounded text-sm text-gray-900 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 bg-white"
