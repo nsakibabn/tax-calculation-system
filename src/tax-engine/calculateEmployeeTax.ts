@@ -48,9 +48,7 @@ export function calculateEmployeeTax(input: EmployeeTaxInput): EmployeeTaxResult
   const grossIncome = roundMoney(regularIncome + finalTaxIncome);
 
   if (sanchayapatra > 0 && rules.sanchayapatra.enabledAsIncomeInput) {
-    warnings.push(
-      "Sanchayapatra/source-tax income is shown separately. Final settlement/source tax treatment is not fully modeled in this calculator."
-    );
+    warnings.push(rules.sanchayapatra.warningNote);
   }
 
   // 5. Salary exemption — applied to employmentIncome ONLY.
@@ -69,9 +67,6 @@ export function calculateEmployeeTax(input: EmployeeTaxInput): EmployeeTaxResult
   //    This is the base for both slab tax and §78 rebate.
   //    sanchayapatra is intentionally excluded — it is final-settlement income.
   const regularIncomeAfterSalaryExemption = clampMoney(regularIncome - salaryExemption);
-
-  // Backward-compat alias (was grossIncome − salaryExemption; now correctly excludes sanchayapatra)
-  const taxableIncomeBeforeThreshold = regularIncomeAfterSalaryExemption;
 
   // 7. Rebate eligible income — no final-tax income, no threshold deduction yet.
   const rebateEligibleIncome = regularIncomeAfterSalaryExemption;
@@ -138,7 +133,6 @@ export function calculateEmployeeTax(input: EmployeeTaxInput): EmployeeTaxResult
     taxableIncome > 0;
 
   const minimumTaxApplied = minimumTaxApplies ? minimumTaxCandidate : 0;
-  const minimumTax = minimumTaxApplied; // backward-compat alias
 
   let finalTax = finalTaxBeforeMinimumTax;
   if (minimumTaxApplies) {
@@ -162,12 +156,13 @@ export function calculateEmployeeTax(input: EmployeeTaxInput): EmployeeTaxResult
   }
 
   // 15. Investment suggestion — additional investment that can still produce useful tax rebate.
-  //     Cap is grossTax because rebate can never exceed grossTax.
-  //     When grossTax = 0, the ceiling is 0 and suggestion is always 0.
+  //     Effective ceiling = grossTax - minimumTaxApplied: rebate can only reduce tax down to
+  //     the minimum tax floor (not below it), so any rebate exceeding that gap is wasted.
+  //     When grossTax = 0 or minimum tax consumes the full gross, ceiling = 0, suggestion = 0.
   let investmentSuggestion = 0;
   if (investmentRebate.enabled) {
     const maxUsefulRebate = Math.min(
-      grossTax,
+      Math.max(grossTax - minimumTaxApplied, 0),
       rebateEligibleIncome * investmentRebate.totalIncomeRate,
       investmentRebate.maxRebate
     );
@@ -189,7 +184,6 @@ export function calculateEmployeeTax(input: EmployeeTaxInput): EmployeeTaxResult
     sanchayapatra: roundMoney(sanchayapatra),
     grossIncome,
     salaryExemption,
-    taxableIncomeBeforeThreshold,
     taxFreeThreshold,
     taxableIncome,
     slabBreakdown,
@@ -198,7 +192,6 @@ export function calculateEmployeeTax(input: EmployeeTaxInput): EmployeeTaxResult
     finalTaxBeforeMinimumTax,
     minimumTaxCandidate,
     minimumTaxApplied,
-    minimumTax, // = minimumTaxApplied (backward-compat alias)
     finalTax,
     monthlyTDS,
     investmentSuggestion,

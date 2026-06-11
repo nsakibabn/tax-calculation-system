@@ -1,6 +1,8 @@
 import type { EmployeeTaxInput } from "../tax-engine/types";
 import MoneyInput from "./MoneyInput";
 import { TAXPAYER_CATEGORIES } from "../data/taxpayerCategories";
+import { bdTaxRules2025_26 } from "../tax-engine/taxRules.bd-2025-26";
+import { formatMoney } from "../utils/formatMoney";
 
 interface EmployeeTaxFormProps {
   value: EmployeeTaxInput;
@@ -116,7 +118,7 @@ export default function EmployeeTaxForm({
           <label htmlFor="isNewTaxpayer" className="text-sm text-gray-700 cursor-pointer">
             New Taxpayer
             <span className="block text-xs text-gray-400 mt-0.5">
-              Minimum tax ৳1,000 instead of ৳5,000
+              Minimum tax {formatMoney(bdTaxRules2025_26.minimumTax.newTaxpayerAmount)} instead of {formatMoney(bdTaxRules2025_26.minimumTax.generalAmount)}
             </span>
           </label>
         </div>

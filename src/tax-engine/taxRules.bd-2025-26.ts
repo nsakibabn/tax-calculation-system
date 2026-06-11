@@ -107,7 +107,7 @@ export const bdTaxRules2025_26: TaxRules = {
     generalAmount: 5000,
     newTaxpayerAmount: 1000,
     sourceNote:
-      "VERIFIED — Paripatra §1.1 (printed p.2, AY 2026-27 & 2027-28): if total income EXCEEDS the tax-free threshold, minimum tax = 5,000 (general) or 1,000 (new taxpayer), even if tax after rebate is lower/zero/negative. No location split for AY 2026-27. (Contrast: AY 2025-26 §2.1 printed p.8 IS location-based: 5,000 Dhaka/Ctg city corp, 4,000 other city corp, 3,000 elsewhere.) NOTE: engine applies the general 5,000; the new-taxpayer 1,000 case needs an 'isNewTaxpayer' input not yet collected.",
+      "VERIFIED — Paripatra §1.1 (printed p.2, AY 2026-27 & 2027-28): if total income EXCEEDS the tax-free threshold, minimum tax = 5,000 (general) or 1,000 (new taxpayer), even if tax after rebate is lower/zero/negative. No location split for AY 2026-27. (Contrast: AY 2025-26 §2.1 printed p.8 IS location-based: 5,000 Dhaka/Ctg city corp, 4,000 other city corp, 3,000 elsewhere.) Engine selects generalAmount or newTaxpayerAmount based on the isNewTaxpayer input collected from the form.",
   },
 
   // ---------------------------------------------------------------------------

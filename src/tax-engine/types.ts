@@ -53,7 +53,6 @@ export interface EmployeeTaxResult {
   // Income progression
   grossIncome: number;              // regularIncome + finalTaxIncome
   salaryExemption: number;
-  taxableIncomeBeforeThreshold: number; // alias for rebateEligibleIncome (backward compat)
   taxFreeThreshold: number;
   taxableIncome: number;            // amount above threshold, sent to progressive slabs
   // Tax calculation
@@ -63,7 +62,6 @@ export interface EmployeeTaxResult {
   finalTaxBeforeMinimumTax: number;
   minimumTaxCandidate: number;   // configured floor for this taxpayer status (always populated)
   minimumTaxApplied: number;     // floor actually applied: 0 when taxableIncome ≤ 0
-  minimumTax: number;            // = minimumTaxApplied (backward-compat alias)
   finalTax: number;
   monthlyTDS: number;
   investmentSuggestion: number;

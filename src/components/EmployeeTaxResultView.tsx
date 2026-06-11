@@ -44,7 +44,7 @@ export default function EmployeeTaxResultView({ result }: EmployeeTaxResultViewP
         <div className="mx-6 my-3 p-3 bg-blue-50 border border-blue-200 rounded-lg">
           <p className="text-xs text-blue-800 leading-relaxed">
             Sanchayapatra/source-tax income is shown separately. This calculator does not fully
-            model final settlement/source tax adjustment for Sanchayapatra.
+            model final settlement/source-tax credit or adjustment for Sanchayapatra.
           </p>
         </div>
       )}
@@ -95,9 +95,9 @@ export default function EmployeeTaxResultView({ result }: EmployeeTaxResultViewP
             label="Tax Before Minimum"
             value={formatMoney(result.finalTaxBeforeMinimumTax)}
           />
-          {result.minimumTaxApplied > 0 && result.finalTax !== result.finalTaxBeforeMinimumTax && (
+          {result.minimumTaxApplied > 0 && (
             <ResultRow
-              label="Minimum Tax Floor Applied"
+              label="Minimum Tax Applied"
               value={formatMoney(result.minimumTaxApplied)}
               danger
             />
