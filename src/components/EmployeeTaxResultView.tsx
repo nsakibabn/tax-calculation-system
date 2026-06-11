@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import type { EmployeeTaxResult } from "../tax-engine/types";
+import { bdTaxRules2025_26 } from "../tax-engine/taxRules.bd-2025-26";
 import { formatMoney, formatPercent } from "../utils/formatMoney";
 import ResultRow from "./ResultRow";
 
@@ -34,7 +35,7 @@ export default function EmployeeTaxResultView({ result }: EmployeeTaxResultViewP
       {/* Header */}
       <div className="px-6 py-4 border-b border-gray-100">
         <h2 className="text-base font-semibold text-gray-800">Tax Calculation Result</h2>
-        <p className="text-xs text-gray-400 mt-0.5">AY 2026-2027 · Income Year 2025-2026</p>
+        <p className="text-xs text-gray-400 mt-0.5">AY {bdTaxRules2025_26.assessmentYear} · Income Year {bdTaxRules2025_26.incomeYear}</p>
       </div>
 
       {/* Final Tax Summary — always visible */}
@@ -70,9 +71,7 @@ export default function EmployeeTaxResultView({ result }: EmployeeTaxResultViewP
           {result.yearlyBonus > 0 && (
             <ResultRow label="Yearly Bonus" value={formatMoney(result.yearlyBonus)} />
           )}
-          {result.yearlyBonus > 0 && (
-            <ResultRow label="Employment Income" value={formatMoney(result.employmentIncome)} />
-          )}
+          <ResultRow label="Employment Income" value={formatMoney(result.employmentIncome)} />
           {result.otherIncome > 0 && (
             <ResultRow label="Other Income" value={formatMoney(result.otherIncome)} />
           )}

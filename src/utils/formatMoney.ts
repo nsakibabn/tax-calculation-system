@@ -1,5 +1,6 @@
 export function formatMoney(value: number): string {
-  return `৳${value.toLocaleString("en-US")}`;
+  if (!Number.isFinite(value)) return "৳0";
+  return `৳${value.toLocaleString("en-IN")}`;
 }
 
 export function formatPercent(value: number): string {
