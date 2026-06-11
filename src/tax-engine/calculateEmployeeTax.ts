@@ -99,9 +99,9 @@ export function calculateEmployeeTax(input: EmployeeTaxInput): EmployeeTaxResult
   //
   //   minimumTaxCandidate — configured floor for this taxpayer (always populated)
   //   minimumTaxApplied   — floor actually enforced: 0 when taxableIncome = 0
-  const minimumTaxCandidate = isNewTaxpayer
+  const minimumTaxCandidate = clampMoney(isNewTaxpayer
     ? rules.minimumTax.newTaxpayerAmount
-    : rules.minimumTax.generalAmount;
+    : rules.minimumTax.generalAmount);
 
   const minimumTaxApplies =
     rules.minimumTax.enabled &&
@@ -111,9 +111,8 @@ export function calculateEmployeeTax(input: EmployeeTaxInput): EmployeeTaxResult
   const minimumTaxApplied = minimumTaxApplies ? minimumTaxCandidate : 0;
 
   // 12. Investment rebate (§78)
-  //     calculatedRebate = raw §78 formula result (may be partially blocked by minimum tax floor)
-  //     effectiveRebate  = actual tax reduction after floor constraint
-  //     rebate           = effectiveRebate (user-facing figure — never overstated)
+  //     calculatedRebate = raw §78 formula result (displayed in UI; may exceed effectiveRebate)
+  //     rebate           = effectiveRebate — capped at taxReductionCapacity (actual tax saving)
   //
   //     rebateEligibleIncome excludes sanchayapatra — only regular income qualifies.
   const { investmentRebate } = rules;
@@ -134,22 +133,19 @@ export function calculateEmployeeTax(input: EmployeeTaxInput): EmployeeTaxResult
     }
   }
 
-  // effectiveRebate: rebate can only reduce tax down to the minimum floor — beyond that is wasted.
+  // rebate capped at taxReductionCapacity — cannot reduce tax below the minimum floor.
   const taxReductionCapacity = Math.max(grossTax - minimumTaxApplied, 0);
-  const effectiveRebate = Math.min(calculatedRebate, taxReductionCapacity);
-  const rebate = effectiveRebate;
+  const rebate = Math.min(calculatedRebate, taxReductionCapacity);
 
   // 13. Tax after rebate, then minimum floor.
-  //     finalTaxBeforeMinimumTax uses calculatedRebate (theoretical — for floor-binding check).
-  //     finalTax floors at minimumTaxApplied when applicable.
+  //     finalTaxBeforeMinimumTax — theoretical tax with full §78 rebate applied, ignoring the floor.
+  //     minimumTaxFloorIsBinding — true only when the floor actively raises the final tax.
   const finalTaxBeforeMinimumTax = clampMoney(grossTax - calculatedRebate);
-
-  let finalTax = minimumTaxApplied > 0
-    ? Math.max(finalTaxBeforeMinimumTax, minimumTaxApplied)
-    : finalTaxBeforeMinimumTax;
+  const minimumTaxFloorIsBinding = minimumTaxApplied > 0 && finalTaxBeforeMinimumTax < minimumTaxApplied;
+  const finalTax = clampMoney(Math.max(finalTaxBeforeMinimumTax, minimumTaxApplied));
 
   if (minimumTaxApplies) {
-    if (finalTaxBeforeMinimumTax < minimumTaxApplied) {
+    if (minimumTaxFloorIsBinding) {
       warnings.push(
         `Minimum tax applied: tax raised to ${minimumTaxApplied.toLocaleString("en-US")} (floor${isNewTaxpayer ? " — new taxpayer rate" : ""}).`
       );
@@ -159,7 +155,6 @@ export function calculateEmployeeTax(input: EmployeeTaxInput): EmployeeTaxResult
       "Minimum tax is defined but not applied in this calculation; verify location/applicability."
     );
   }
-  finalTax = clampMoney(finalTax);
 
   // 14. Monthly TDS (estimate = final annual tax / 12)
   const monthlyTDS = roundMoney(finalTax / 12);
@@ -202,6 +197,7 @@ export function calculateEmployeeTax(input: EmployeeTaxInput): EmployeeTaxResult
     calculatedRebate,
     rebate,
     finalTaxBeforeMinimumTax,
+    minimumTaxFloorIsBinding,
     minimumTaxCandidate,
     minimumTaxApplied,
     finalTax,

@@ -19,16 +19,11 @@ function Section({ title, children }: { title: string; children: ReactNode }) {
 }
 
 export default function EmployeeTaxResultView({ result }: EmployeeTaxResultViewProps) {
-  // Floor is binding when it actually controls (or equals) the final payable tax.
-  const minimumTaxFloorIsBinding =
-    result.minimumTaxApplied > 0 &&
-    result.finalTaxBeforeMinimumTax <= result.minimumTaxApplied;
-
   function getInvestmentAdviceMessage(): string {
     if (result.grossTax <= 0) return "No tax to reduce";
     if (result.minimumTaxApplied > 0 && result.grossTax <= result.minimumTaxApplied)
       return "Tax is at the minimum floor — no rebate headroom";
-    if (minimumTaxFloorIsBinding)
+    if (result.minimumTaxFloorIsBinding)
       return "Further rebate limited by minimum tax floor";
     if (result.investmentSuggestion > 0) return formatMoney(result.investmentSuggestion);
     return "Rebate opportunity already used";
@@ -101,18 +96,20 @@ export default function EmployeeTaxResultView({ result }: EmployeeTaxResultViewP
         {/* 3. Tax Calculation */}
         <Section title="Tax Calculation">
           <ResultRow label="Gross Tax" value={formatMoney(result.grossTax)} />
-          {result.rebate > 0 && (
+          {result.calculatedRebate > 0 && (
             <ResultRow
               label="Investment Rebate (§78)"
-              value={`− ${formatMoney(result.rebate)}`}
+              value={`− ${formatMoney(result.calculatedRebate)}`}
               muted
             />
           )}
-          <ResultRow
-            label="Tax Before Minimum"
-            value={formatMoney(result.grossTax - result.rebate)}
-          />
-          {minimumTaxFloorIsBinding && (
+          {result.minimumTaxFloorIsBinding && result.calculatedRebate > 0 && (
+            <ResultRow
+              label="Tax Before Minimum"
+              value={formatMoney(result.finalTaxBeforeMinimumTax)}
+            />
+          )}
+          {result.minimumTaxFloorIsBinding && (
             <ResultRow
               label="Minimum Tax Applied"
               value={formatMoney(result.minimumTaxApplied)}

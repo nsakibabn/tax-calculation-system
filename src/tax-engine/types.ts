@@ -60,7 +60,8 @@ export interface EmployeeTaxResult {
   grossTax: number;
   calculatedRebate: number;      // §78 formula result — may be partially blocked by minimum tax floor
   rebate: number;                // = effectiveRebate: actual tax reduction after floor constraint
-  finalTaxBeforeMinimumTax: number; // grossTax − calculatedRebate (used for floor-binding check)
+  finalTaxBeforeMinimumTax: number; // grossTax − calculatedRebate (theoretical pre-floor tax)
+  minimumTaxFloorIsBinding: boolean; // true when floor actively raised final tax above post-rebate amount
   minimumTaxCandidate: number;   // configured floor for this taxpayer status (always populated)
   minimumTaxApplied: number;     // floor actually enforced: 0 when taxableIncome = 0
   finalTax: number;
