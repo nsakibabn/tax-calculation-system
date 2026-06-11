@@ -38,12 +38,12 @@ export function calculateEmployeeTax(input: EmployeeTaxInput): EmployeeTaxResult
   // 4. Income streams
   //
   //   employmentIncome — salary + bonus ("চাকরি হইতে আয়"). Base for salary exemption only.
-  //   finalTaxIncome   — always 0. Sanchayapatra is now merged into regularIncome.
-  //   regularIncome    — all slab-taxable income: employment + other + sanchayapatra.
-  //   grossIncome      — equals regularIncome (no separate final-settlement stream).
+  //   finalTaxIncome   — always 0 (retained for backward compatibility).
+  //   regularIncome    — slab-taxable income: employment + other. Sanchayapatra is NOT income.
+  //   grossIncome      — equals regularIncome.
   const employmentIncome = roundMoney(annualSalary + yearlyBonus);
   const finalTaxIncome = 0;
-  const regularIncome = roundMoney(employmentIncome + otherIncome + sanchayapatra);
+  const regularIncome = roundMoney(employmentIncome + otherIncome);
   const grossIncome = regularIncome;
 
   if (sanchayapatra > 0) {
@@ -68,8 +68,7 @@ export function calculateEmployeeTax(input: EmployeeTaxInput): EmployeeTaxResult
   }
 
   // 6. Regular income after salary exemption.
-  //    This is the base for both slab tax and §78 rebate.
-  //    Includes sanchayapatra — it is now merged into regularIncome (see step 4).
+  //    Base for both slab tax and §78 rebate. Sanchayapatra is NOT included — it is not income.
   const regularIncomeAfterSalaryExemption = clampMoney(regularIncome - salaryExemption);
 
   // 7. Rebate eligible income — no final-tax income, no threshold deduction yet.
@@ -102,8 +101,7 @@ export function calculateEmployeeTax(input: EmployeeTaxInput): EmployeeTaxResult
 
   // 11. Minimum tax — computed BEFORE rebate (depends only on taxableIncome, not on rebate).
   //     Minimum tax applies when regular taxable income exceeds the tax-free threshold.
-  //     Sanchayapatra is now included in regularIncome, so it can contribute to taxableIncome
-  //     and therefore CAN trigger minimum tax (e.g. sanchayapatra-only income).
+  //     Sanchayapatra is NOT income, so it never contributes to taxableIncome or minimum tax.
   //
   //   minimumTaxCandidate — configured floor for this taxpayer (always populated)
   //   minimumTaxApplied   — floor actually enforced: 0 when taxableIncome = 0
@@ -122,7 +120,7 @@ export function calculateEmployeeTax(input: EmployeeTaxInput): EmployeeTaxResult
   //     calculatedRebate = raw §78 formula result (displayed in UI; may exceed effectiveRebate)
   //     rebate           = effectiveRebate — capped at taxReductionCapacity (actual tax saving)
   //
-  //     rebateEligibleIncome includes sanchayapatra — it is now part of regularIncome.
+  //     rebateEligibleIncome excludes sanchayapatra — it is not income.
   const { investmentRebate } = rules;
   let calculatedRebate = 0;
   if (investmentRebate.enabled) {
@@ -146,10 +144,10 @@ export function calculateEmployeeTax(input: EmployeeTaxInput): EmployeeTaxResult
   const effectiveRebate = Math.min(calculatedRebate, taxReductionCapacity);
   const rebate = effectiveRebate; // backward-compatible alias
 
-  // 13. Sanchayapatra tax credit (PROJECT RULE: 15% of sanchayapatra amount).
-  //     Applied after investment rebate. Credit rate is from taxRules config.
-  const sanchayapatraTaxCredit = clampMoney(sanchayapatra * rules.sanchayapatra.taxCreditRate);
-  const totalTaxReduction = clampMoney(effectiveRebate + sanchayapatraTaxCredit);
+  // 13. Sanchayapatra rebate (PROJECT RULE: 15% of amount — amount is NOT income).
+  //     Applied after investment rebate. Rate comes from taxRules config, not hard-coded.
+  const sanchayapatraRebate = clampMoney(sanchayapatra * rules.sanchayapatra.rebateRate);
+  const totalRebate = clampMoney(effectiveRebate + sanchayapatraRebate);
 
   // 14. Final tax calculation.
   //     Calculation order:
@@ -161,8 +159,8 @@ export function calculateEmployeeTax(input: EmployeeTaxInput): EmployeeTaxResult
   //     minimumTaxFloorIsBinding uses finalTaxTheoretical (full calculatedRebate + credit, no floor)
   //     to detect whether the floor is needed — consistent with how calculatedRebate represents
   //     the full theoretical §78 entitlement.
-  const finalTaxBeforeMinimumTax = clampMoney(grossTax - effectiveRebate - sanchayapatraTaxCredit);
-  const finalTaxTheoretical = clampMoney(grossTax - calculatedRebate - sanchayapatraTaxCredit);
+  const finalTaxBeforeMinimumTax = clampMoney(grossTax - effectiveRebate - sanchayapatraRebate);
+  const finalTaxTheoretical = clampMoney(grossTax - calculatedRebate - sanchayapatraRebate);
   const minimumTaxFloorIsBinding = minimumTaxApplied > 0 && finalTaxTheoretical < minimumTaxApplied;
   const finalTax = clampMoney(Math.max(finalTaxBeforeMinimumTax, minimumTaxApplied));
 
@@ -185,11 +183,11 @@ export function calculateEmployeeTax(input: EmployeeTaxInput): EmployeeTaxResult
   }
 
   // 16. Investment suggestion — how much MORE to invest to exhaust all useful rebate headroom.
-  //     Remaining capacity for investment rebate = total capacity minus sanchayapatra credit already used.
-  //     When sanchayapatra credit fills all headroom, or floor leaves no room, suggestion = 0.
+  //     Remaining capacity for investment rebate after sanchayapatra rebate effect.
+  //     When sanchayapatra rebate fills all headroom, or floor leaves no room, suggestion = 0.
   let investmentSuggestion = 0;
   if (investmentRebate.enabled) {
-    const remainingCapacityForRebate = Math.max(taxReductionCapacity - sanchayapatraTaxCredit, 0);
+    const remainingCapacityForRebate = Math.max(taxReductionCapacity - sanchayapatraRebate, 0);
     const maxUsefulRebate = Math.min(
       remainingCapacityForRebate,
       rebateEligibleIncome * investmentRebate.totalIncomeRate,
@@ -220,8 +218,8 @@ export function calculateEmployeeTax(input: EmployeeTaxInput): EmployeeTaxResult
     calculatedRebate,
     effectiveRebate,
     rebate,
-    sanchayapatraTaxCredit,
-    totalTaxReduction,
+    sanchayapatraRebate,
+    totalRebate,
     finalTaxBeforeMinimumTax,
     minimumTaxFloorIsBinding,
     minimumTaxCandidate,

@@ -42,9 +42,9 @@ export interface SlabBreakdownItem {
 export interface EmployeeTaxResult {
   // Income stream breakdown
   employmentIncome: number;         // annualSalary + yearlyBonus
-  regularIncome: number;            // employmentIncome + otherIncome + sanchayapatra (all slab-taxable)
-  finalTaxIncome: number;           // always 0 — sanchayapatra is now included in regularIncome
-  rebateEligibleIncome: number;     // regularIncome − salaryExemption (§78 rebate base, includes sanchayapatra)
+  regularIncome: number;            // employmentIncome + otherIncome (sanchayapatra excluded — not income)
+  finalTaxIncome: number;           // always 0 — retained for backward compatibility
+  rebateEligibleIncome: number;     // regularIncome − salaryExemption (§78 rebate base; excludes sanchayapatra)
   // Raw inputs echoed back
   annualSalary: number;
   yearlyBonus: number;
@@ -61,9 +61,9 @@ export interface EmployeeTaxResult {
   calculatedRebate: number;      // §78 formula capped at grossTax — theoretical investment rebate
   effectiveRebate: number;       // actual investment rebate = min(calculatedRebate, taxReductionCapacity)
   rebate: number;                // backward-compatible alias for effectiveRebate
-  sanchayapatraTaxCredit: number; // sanchayapatra × 15% (project rule)
-  totalTaxReduction: number;     // effectiveRebate + sanchayapatraTaxCredit
-  finalTaxBeforeMinimumTax: number; // grossTax − effectiveRebate − sanchayapatraTaxCredit (before floor)
+  sanchayapatraRebate: number;   // sanchayapatra × 15% rebate (project rule — amount is NOT income)
+  totalRebate: number;           // effectiveRebate + sanchayapatraRebate
+  finalTaxBeforeMinimumTax: number; // grossTax − effectiveRebate − sanchayapatraRebate (before floor)
   minimumTaxFloorIsBinding: boolean; // true when floor actively raised final tax above post-rebate amount
   minimumTaxCandidate: number;   // configured floor for this taxpayer status (always populated)
   minimumTaxApplied: number;     // floor actually enforced: 0 when taxableIncome = 0
@@ -118,9 +118,8 @@ export interface MinimumTaxRule {
 export interface SanchayapatraRule {
   enabledAsIncomeInput: boolean;
   verified: boolean;
-  includedInRegularIncome: boolean; // true = merged into regular income stream
-  taxCreditRate: number;            // 0.15 = 15% credit on sanchayapatra amount
-  treatment: string;
+  includedInIncome: boolean;  // false — amount is NOT counted as income
+  rebateRate: number;         // 0.15 — 15% of amount applied as rebate
   sourceNote: string;
   warningNote: string;
 }

@@ -91,42 +91,47 @@ describe('calculateEmployeeTax — golden tests (AY 2026-27)', () => {
   })
 
   // ─── Case 7: Sanchayapatra only ───────────────────────────────────────────
-  it('sanchayapatra only — included in regularIncome, 15% credit applied, minimum floor binds', () => {
-    // sanchayapatra=500k → regularIncome=500k, taxable=125k, grossTax=12500
-    // credit=75000 > grossTax → finalTaxBeforeMinimumTax=0, floor=5000 binds
+  it('sanchayapatra only — NOT counted as income; 15% rebate applied; finalTax=0', () => {
+    // sanchayapatra=500k is NOT income → regularIncome=0, grossIncome=0, taxableIncome=0
+    // no slab tax, no minimum floor (taxableIncome=0), sanchayapatraRebate=75000, finalTax=0
     const r = calculateEmployeeTax({ ...BASE, sanchayapatra: 500000 })
-    expect(r.regularIncome).toBe(500000)
+    expect(r.regularIncome).toBe(0)
+    expect(r.grossIncome).toBe(0)
+    expect(r.taxableIncome).toBe(0)
+    expect(r.grossTax).toBe(0)
     expect(r.finalTaxIncome).toBe(0)
-    expect(r.taxableIncome).toBe(125000)
-    expect(r.grossTax).toBe(12500)
-    expect(r.sanchayapatraTaxCredit).toBe(75000)
+    expect(r.sanchayapatraRebate).toBe(75000)
     expect(r.finalTaxBeforeMinimumTax).toBe(0)
+    expect(r.minimumTaxFloorIsBinding).toBe(false)
+    expect(r.finalTax).toBe(0)
+    expect(r.monthlyTDS).toBe(0)
+    expect(r.warnings.some(w => /sanchayapatra/i.test(w))).toBe(true)
+  })
+
+  // ─── Case 8: Salary + Sanchayapatra ───────────────────────────────────────
+  it('salary + sanchayapatra — sanchayapatra excluded from regularIncome', () => {
+    // annualSalary=960k, exemption=320k, sanchayapatra=2M NOT in income
+    // regularIncome=960k, taxable=265k, grossTax=26500
+    // sanchayapatraRebate=300000 >> grossTax → clamps to 0, minimum floor binds → finalTax=5000
+    const r = calculateEmployeeTax({ ...BASE, monthlySalary: 80000, sanchayapatra: 2000000 })
+    expect(r.finalTaxIncome).toBe(0)
+    expect(r.regularIncome).toBe(960000)
+    expect(r.grossIncome).toBe(960000)
+    expect(r.taxableIncome).toBe(265000)
+    expect(r.grossTax).toBe(26500)
+    expect(r.sanchayapatraRebate).toBe(300000)
     expect(r.minimumTaxFloorIsBinding).toBe(true)
     expect(r.finalTax).toBe(5000)
     expect(r.warnings.some(w => /sanchayapatra/i.test(w))).toBe(true)
   })
 
-  // ─── Case 8: Salary + Sanchayapatra ───────────────────────────────────────
-  it('salary + sanchayapatra — both in regularIncome, finalTaxIncome=0', () => {
-    // annualSalary=960k, exemption=320k, sanchayapatra=2M
-    // regularIncome=2960k, taxable=2960k−320k−375k=2265k
-    const r = calculateEmployeeTax({ ...BASE, monthlySalary: 80000, sanchayapatra: 2000000 })
-    expect(r.finalTaxIncome).toBe(0)
-    expect(r.regularIncome).toBe(2960000)
-    expect(r.taxableIncome).toBe(2265000)
-    expect(r.grossTax).toBe(456250)
-    expect(r.sanchayapatraTaxCredit).toBe(300000)
-    expect(r.finalTax).toBe(156250)
-    expect(r.warnings.some(w => /sanchayapatra/i.test(w))).toBe(true)
-  })
-
-  // ─── Case 9: Rebate base includes Sanchayapatra ───────────────────────────
-  it('rebateEligibleIncome includes sanchayapatra (2640k not 640k)', () => {
-    // annualSalary=960k, exemption=320k, sanchayapatra=2M → rebateEligibleIncome=2640k
-    // rebate = min(2640k×3%=79200, 300k×15%=45000, 1M) = 45000
+  // ─── Case 9: Rebate base excludes Sanchayapatra ───────────────────────────
+  it('rebateEligibleIncome excludes sanchayapatra (640k not 2640k)', () => {
+    // annualSalary=960k, exemption=320k → rebateEligibleIncome=640k (sanchayapatra not income)
+    // rebate = min(640k×3%=19200, 300k×15%=45000, 1M) = 19200
     const r = calculateEmployeeTax({ ...BASE, monthlySalary: 80000, investment: 300000, sanchayapatra: 2000000 })
-    expect(r.rebateEligibleIncome).toBe(2640000)
-    expect(r.calculatedRebate).toBe(45000)
+    expect(r.rebateEligibleIncome).toBe(640000)
+    expect(r.calculatedRebate).toBe(19200)
   })
 
   // ─── Case 10: New taxpayer minimum tax ────────────────────────────────────
@@ -210,37 +215,57 @@ describe('calculateEmployeeTax — golden tests (AY 2026-27)', () => {
     expect(r.rebateEligibleIncome).toBe(520000)      // 720k regularIncome − 200k exemption
   })
 
-  // ─── Case 18: Sanchayapatra credit visibly reduces final tax (no floor) ────
-  it('sanchayapatra tax credit reduces finalTax below grossTax', () => {
-    // monthlySalary=200k, sanchayapatra=1M → grossTax=521250, credit=150000
-    // finalTax=521250−150000=371250, floor does not bind
+  // ─── Case 18: Sanchayapatra rebate visibly reduces final tax (no floor) ────
+  it('sanchayapatra rebate reduces finalTax below grossTax', () => {
+    // monthlySalary=200k, sanchayapatra=1M — sanchayapatra NOT in income
+    // grossTax=271250 (salary-only), rebate=150000 → finalTax=121250
     const r = calculateEmployeeTax({ ...BASE, monthlySalary: 200000, sanchayapatra: 1000000 })
-    expect(r.sanchayapatraTaxCredit).toBe(150000)
-    expect(r.finalTax).toBe(r.grossTax - r.sanchayapatraTaxCredit)
+    expect(r.sanchayapatraRebate).toBe(150000)
+    expect(r.finalTax).toBe(r.grossTax - r.sanchayapatraRebate)
     expect(r.minimumTaxFloorIsBinding).toBe(false)
   })
 
-  // ─── Case 19: Sanchayapatra credit cannot push finalTaxBeforeMinimumTax negative ─
-  it('sanchayapatra credit is clamped — finalTaxBeforeMinimumTax never negative', () => {
-    // sanchayapatra=500k only: grossTax=12500, credit=75000 → clamps to 0
+  // ─── Case 19: Sanchayapatra rebate cannot push finalTaxBeforeMinimumTax negative ─
+  it('sanchayapatra rebate is clamped — finalTaxBeforeMinimumTax never negative', () => {
+    // sanchayapatra=500k (NOT income): grossTax=0, rebate=75000 → max(0-75000,0)=0
     const r = calculateEmployeeTax({ ...BASE, sanchayapatra: 500000 })
     expect(r.finalTaxBeforeMinimumTax).toBe(0)
     expect(r.finalTaxBeforeMinimumTax).toBeGreaterThanOrEqual(0)
   })
 
-  // ─── Case 20: Sanchayapatra warning contains project-rule wording ──────────
-  it('sanchayapatra warning references project rule simplification', () => {
+  // ─── Case 20: Sanchayapatra warning says amount is not counted as income ────
+  it('sanchayapatra warning says amount is not counted as income', () => {
     const r = calculateEmployeeTax({ ...BASE, sanchayapatra: 100000 })
     const sanctWarn = r.warnings.find(w => /sanchayapatra/i.test(w))
     expect(sanctWarn).toBeDefined()
-    expect(sanctWarn).toMatch(/project rule/i)
+    expect(sanctWarn).toMatch(/not counted as income/i)
   })
 
-  // ─── Case 21: totalTaxReduction = effectiveRebate + sanchayapatraTaxCredit ─
-  it('totalTaxReduction is sum of rebate and sanchayapatra credit', () => {
+  // ─── Case 21: totalRebate = effectiveRebate + sanchayapatraRebate ───────────
+  it('totalRebate is sum of effectiveRebate and sanchayapatraRebate', () => {
+    // monthlySalary=80k, invest=300k, sanch=2M → effectiveRebate=19200, sanchayapatraRebate=300000
     const r = calculateEmployeeTax({ ...BASE, monthlySalary: 80000, investment: 300000, sanchayapatra: 2000000 })
-    expect(r.totalTaxReduction).toBe(r.effectiveRebate + r.sanchayapatraTaxCredit)
-    expect(r.sanchayapatraTaxCredit).toBe(300000)
+    expect(r.totalRebate).toBe(r.effectiveRebate + r.sanchayapatraRebate)
+    expect(r.sanchayapatraRebate).toBe(300000)
+  })
+
+  // ─── Case 22: Sanchayapatra does not affect slab tax ──────────────────────
+  it('sanchayapatra does not affect grossTax — same salary produces same grossTax', () => {
+    const without = calculateEmployeeTax({ ...BASE, monthlySalary: 80000 })
+    const withSanch = calculateEmployeeTax({ ...BASE, monthlySalary: 80000, sanchayapatra: 2000000 })
+    expect(withSanch.grossTax).toBe(without.grossTax)
+    expect(withSanch.regularIncome).toBe(without.regularIncome)
+    expect(withSanch.grossIncome).toBe(without.grossIncome)
+    expect(withSanch.taxableIncome).toBe(without.taxableIncome)
+  })
+
+  // ─── Case 23: Old sanchayapatra warnings no longer present ────────────────
+  it('sanchayapatra warnings do not mention old treatment (final settlement, source-tax)', () => {
+    const r = calculateEmployeeTax({ ...BASE, sanchayapatra: 100000 })
+    const warns = r.warnings.join(' ')
+    expect(warns).not.toMatch(/final.?settlement/i)
+    expect(warns).not.toMatch(/included.*regular.*income/i)
+    expect(warns).not.toMatch(/source.?tax income.*shown separately/i)
   })
 
   // ─── Case 17: investmentSuggestion with partial existing investment ────────

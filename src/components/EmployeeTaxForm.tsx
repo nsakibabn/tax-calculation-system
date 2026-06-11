@@ -72,7 +72,7 @@ export default function EmployeeTaxForm({
           value={value.sanchayapatra}
           onChange={(v) => update({ sanchayapatra: v })}
           placeholder="0"
-          helperText="Included with regular income; a 15% tax credit is applied (project rule — verify before production use)."
+          helperText="Enter Sanchayapatra amount for 15% rebate. This amount is not counted as income."
         />
       </div>
 

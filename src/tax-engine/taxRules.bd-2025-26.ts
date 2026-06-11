@@ -111,21 +111,20 @@ export const bdTaxRules2025_26: TaxRules = {
   },
 
   // ---------------------------------------------------------------------------
-  // 6. Sanchayapatra (সঞ্চয়পত্র) — included in regular income with 15% credit
-  //    PROJECT RULE: Sanchayapatra is treated as regular income and a 15% credit
-  //    is applied to reduce tax. This simplifies the official source-tax-final-
-  //    settlement treatment. Verify against official NBR guidance before production.
+  // 6. Sanchayapatra (সঞ্চয়পত্র) — NOT counted as income; 15% rebate applied
+  //    PROJECT RULE: Sanchayapatra amount is excluded from income entirely.
+  //    Instead, 15% of the amount is applied as a tax rebate/credit.
+  //    Verify against official NBR guidance before production use.
   // ---------------------------------------------------------------------------
   sanchayapatra: {
     enabledAsIncomeInput: true,
     verified: false,
-    includedInRegularIncome: true,
-    taxCreditRate: 0.15,
-    treatment: "included_in_regular_income_with_credit",
+    includedInIncome: false,
+    rebateRate: 0.15,
     sourceNote:
-      "PROJECT RULE (unverified) — Sanchayapatra profit is included with regular income and a 15% tax credit is applied (sanchayapatraTaxCredit = amount × 0.15). The official treatment per Paripatra Example 12 (p.47) is that source tax on sanchayapatra is a FINAL settlement (চূড়ান্ত করদায়) — not re-taxed, not refunded, credit not adjustable. This simplified approach should be verified against Income Tax Act 2023 and official NBR guidance before production use.",
+      "Project rule: Sanchayapatra amount is not counted as income; 15% of the amount is applied as rebate/tax credit. The official treatment per Paripatra Example 12 (p.47) is source-tax-as-final-settlement. This simplified approach should be verified against official NBR guidance before production use.",
     warningNote:
-      "Sanchayapatra is included with regular income and a 15% tax credit is applied as a project rule. This is a simplification — verify against official NBR guidance before production use.",
+      "Sanchayapatra amount is not counted as income in this calculator; 15% is applied as rebate.",
   },
 
   // ---------------------------------------------------------------------------

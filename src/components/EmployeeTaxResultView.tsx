@@ -71,13 +71,13 @@ export default function EmployeeTaxResultView({ result }: EmployeeTaxResultViewP
           {result.otherIncome > 0 && (
             <ResultRow label="Other Income" value={formatMoney(result.otherIncome)} />
           )}
-          {result.sanchayapatra > 0 && (
-            <ResultRow label="Sanchayapatra" value={formatMoney(result.sanchayapatra)} />
-          )}
-          {(result.otherIncome > 0 || result.sanchayapatra > 0) && (
+          {result.otherIncome > 0 && (
             <ResultRow label="Regular Income" value={formatMoney(result.regularIncome)} />
           )}
           <ResultRow label="Gross Income" value={formatMoney(result.grossIncome)} />
+          {result.sanchayapatra > 0 && (
+            <ResultRow label="Sanchayapatra (Not Counted as Income)" value={formatMoney(result.sanchayapatra)} muted />
+          )}
         </Section>
 
         {/* 2. Taxable Income */}
@@ -110,17 +110,17 @@ export default function EmployeeTaxResultView({ result }: EmployeeTaxResultViewP
               muted
             />
           )}
-          {result.sanchayapatraTaxCredit > 0 && (
+          {result.sanchayapatraRebate > 0 && (
             <ResultRow
-              label="Sanchayapatra Tax Credit (15%)"
-              value={`− ${formatMoney(result.sanchayapatraTaxCredit)}`}
+              label="Sanchayapatra Rebate (15%)"
+              value={`− ${formatMoney(result.sanchayapatraRebate)}`}
               muted
             />
           )}
-          {result.effectiveRebate > 0 && result.sanchayapatraTaxCredit > 0 && (
+          {result.effectiveRebate > 0 && result.sanchayapatraRebate > 0 && (
             <ResultRow
-              label="Total Tax Reduction"
-              value={`− ${formatMoney(result.totalTaxReduction)}`}
+              label="Total Rebate"
+              value={`− ${formatMoney(result.totalRebate)}`}
               muted
             />
           )}

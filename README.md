@@ -125,7 +125,7 @@ docs/
 | Salary exemption min(⅓ income, 5,00,000) | ✅ Verified — Paripatra item 59.5 p.80 |
 | Minimum tax ৳5,000 / ৳1,000 new taxpayer | ✅ Verified — Paripatra §1.1 p.2 |
 | Investment rebate §78 (3% / 15% / 10L cap) | ⚠ Partially verified — constants in Act §78, not in Paripatra |
-| Sanchayapatra income treatment | ⚠ Project rule — included with regular income, 15% credit applied (unverified) |
+| Sanchayapatra treatment | ⚠ Project rule — amount excluded from income; 15% rebate applied (unverified) |
 
 ---
 
@@ -133,7 +133,7 @@ docs/
 
 1. **Scope — salaried/employee income only.** Business income, house property income, capital gains, asset surcharge, and full return filing are not implemented yet.
 
-2. **Sanchayapatra (সঞ্চয়পত্র).** Sanchayapatra profit is included with regular income and a 15% tax credit is applied (project rule). The official NBR treatment per Paripatra Example 12 is source-tax-as-final-settlement — this simplified approach should be verified against official NBR guidance before production use.
+2. **Sanchayapatra (সঞ্চয়পত্র).** Sanchayapatra amount is not counted as income. Instead, 15% of the amount is applied as a tax rebate (project rule). The official NBR treatment per Paripatra Example 12 is source-tax-as-final-settlement — verify against official NBR guidance before production use.
 
 3. **Salary exemption — simplified.** Salary exemption is currently simplified because detailed salary components such as basic salary, house rent allowance (HRA), medical allowance, conveyance allowance, and other allowances are not collected separately.
 
