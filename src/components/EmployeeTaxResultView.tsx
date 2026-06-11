@@ -160,8 +160,8 @@ export default function EmployeeTaxResultView({ result }: EmployeeTaxResultViewP
                   </tr>
                 </thead>
                 <tbody>
-                  {result.slabBreakdown.map((slab, i) => (
-                    <tr key={i} className="border-b border-gray-50 hover:bg-gray-50">
+                  {result.slabBreakdown.map((slab) => (
+                    <tr key={`${slab.from}-${slab.rate}`} className="border-b border-gray-50 hover:bg-gray-50">
                       <td className="py-2 px-3 text-gray-600 text-xs">{slab.label}</td>
                       <td className="py-2 px-3 text-right font-mono text-gray-800">
                         {formatMoney(slab.slabAmount)}
@@ -205,15 +205,17 @@ export default function EmployeeTaxResultView({ result }: EmployeeTaxResultViewP
           </div>
         )}
 
-        {/* Debug: Raw JSON */}
-        <details className="mx-3 mb-4 mt-2">
-          <summary className="text-xs text-gray-400 cursor-pointer hover:text-gray-600 py-1 select-none">
-            Debug: Raw JSON output
-          </summary>
-          <pre className="mt-2 text-xs bg-gray-50 p-3 rounded overflow-x-auto border border-gray-100 text-gray-500 leading-relaxed">
-            {JSON.stringify(result, null, 2)}
-          </pre>
-        </details>
+        {/* Debug: Raw JSON — dev only */}
+        {import.meta.env.DEV && (
+          <details className="mx-3 mb-4 mt-2">
+            <summary className="text-xs text-gray-400 cursor-pointer hover:text-gray-600 py-1 select-none">
+              Debug: Raw JSON output
+            </summary>
+            <pre className="mt-2 text-xs bg-gray-50 p-3 rounded overflow-x-auto border border-gray-100 text-gray-500 leading-relaxed">
+              {JSON.stringify(result, null, 2)}
+            </pre>
+          </details>
+        )}
       </div>
     </div>
   );

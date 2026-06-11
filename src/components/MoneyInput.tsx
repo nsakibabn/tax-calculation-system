@@ -36,7 +36,7 @@ export default function MoneyInput({
           name={name}
           type="number"
           min="0"
-          value={value > 0 ? value : ""}
+          value={value}
           onChange={handleChange}
           placeholder={placeholder ?? "0"}
           className="w-full pl-7 pr-3 py-2 border border-gray-300 rounded text-sm text-gray-900 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 bg-white"

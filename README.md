@@ -22,7 +22,9 @@ Tax rules sourced from: **Official NBR Income Tax Paripatra 2025-2026** (21 Augu
 npm install
 npm run dev       # development server (localhost:5173)
 npm run build     # production build
+npm test          # run Vitest golden tests
 npm run lint      # ESLint check
+npm run zip       # create clean source zip (no node_modules/dist/.git)
 ```
 
 ---
@@ -115,5 +117,9 @@ docs/
 | Step 2 — Verify rules against NBR Paripatra | ✅ Done |
 | Step 3 — Input form UI (Tailwind) | ✅ Done |
 | Step 3.1 — Core bug fix and stabilization | ✅ Done |
-| Step 4 — Report / PDF export | Pending |
-| Step 5 — Business taxpayer engine | Pending |
+| Step 3.2 — Build / package cleanup | ✅ Done |
+| Step 3.3 — Vitest golden tests + strict TypeScript | ✅ Done |
+| Step 3.4 — UI wording / format polish | ✅ Done |
+| Step 4 — Smart advice (investment guidance) | Pending |
+| Step 5 — Report / PDF export | Pending |
+| Step 6 — Business taxpayer engine | Pending |
