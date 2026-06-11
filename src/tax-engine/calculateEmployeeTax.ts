@@ -69,7 +69,7 @@ export function calculateEmployeeTax(input: EmployeeTaxInput): EmployeeTaxResult
 
   // 6. Regular income after salary exemption.
   //    This is the base for both slab tax and §78 rebate.
-  //    sanchayapatra is intentionally excluded — it is final-settlement income.
+  //    Includes sanchayapatra — it is now merged into regularIncome (see step 4).
   const regularIncomeAfterSalaryExemption = clampMoney(regularIncome - salaryExemption);
 
   // 7. Rebate eligible income — no final-tax income, no threshold deduction yet.
@@ -101,9 +101,9 @@ export function calculateEmployeeTax(input: EmployeeTaxInput): EmployeeTaxResult
   );
 
   // 11. Minimum tax — computed BEFORE rebate (depends only on taxableIncome, not on rebate).
-  //     In this simplified calculator, minimum tax applies only when regular taxable income
-  //     exceeds the tax-free threshold. Final-source-tax income (Sanchayapatra) is shown
-  //     separately and does NOT trigger regular minimum tax in this version.
+  //     Minimum tax applies when regular taxable income exceeds the tax-free threshold.
+  //     Sanchayapatra is now included in regularIncome, so it can contribute to taxableIncome
+  //     and therefore CAN trigger minimum tax (e.g. sanchayapatra-only income).
   //
   //   minimumTaxCandidate — configured floor for this taxpayer (always populated)
   //   minimumTaxApplied   — floor actually enforced: 0 when taxableIncome = 0
@@ -122,7 +122,7 @@ export function calculateEmployeeTax(input: EmployeeTaxInput): EmployeeTaxResult
   //     calculatedRebate = raw §78 formula result (displayed in UI; may exceed effectiveRebate)
   //     rebate           = effectiveRebate — capped at taxReductionCapacity (actual tax saving)
   //
-  //     rebateEligibleIncome excludes sanchayapatra — only regular income qualifies.
+  //     rebateEligibleIncome includes sanchayapatra — it is now part of regularIncome.
   const { investmentRebate } = rules;
   let calculatedRebate = 0;
   if (investmentRebate.enabled) {
@@ -178,13 +178,13 @@ export function calculateEmployeeTax(input: EmployeeTaxInput): EmployeeTaxResult
     );
   }
 
-  // 14. Monthly TDS (estimate = final annual tax / 12)
+  // 15. Monthly TDS (estimate = final annual tax / 12)
   const monthlyTDS = roundMoney(finalTax / 12);
   if (rules.tdsEstimate.enabled && finalTax > 0) {
     warnings.push("Monthly TDS is estimated as final annual tax divided by 12.");
   }
 
-  // 15. Investment suggestion — how much MORE to invest to exhaust all useful rebate headroom.
+  // 16. Investment suggestion — how much MORE to invest to exhaust all useful rebate headroom.
   //     Remaining capacity for investment rebate = total capacity minus sanchayapatra credit already used.
   //     When sanchayapatra credit fills all headroom, or floor leaves no room, suggestion = 0.
   let investmentSuggestion = 0;
