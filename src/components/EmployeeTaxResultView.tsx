@@ -94,7 +94,7 @@ export default function EmployeeTaxResultView({ result }: EmployeeTaxResultViewP
           {result.salaryExemption > 0 && (
             <ResultRow label="Salary Exemption" value={`− ${formatMoney(result.salaryExemption)}`} muted />
           )}
-          <ResultRow label="Income After Exemption" value={formatMoney(result.rebateEligibleIncome)} />
+          <ResultRow label="Regular Income After Salary Exemption" value={formatMoney(result.rebateEligibleIncome)} />
           <ResultRow label="Tax-Free Threshold" value={`− ${formatMoney(result.taxFreeThreshold)}`} muted />
           <ResultRow
             label="Taxable Income"
