@@ -19,6 +19,21 @@ function Section({ title, children }: { title: string; children: ReactNode }) {
 }
 
 export default function EmployeeTaxResultView({ result }: EmployeeTaxResultViewProps) {
+  // Floor is binding when it actually controls (or equals) the final payable tax.
+  const minimumTaxFloorIsBinding =
+    result.minimumTaxApplied > 0 &&
+    result.finalTaxBeforeMinimumTax <= result.minimumTaxApplied;
+
+  function getInvestmentAdviceMessage(): string {
+    if (result.grossTax <= 0) return "No tax to reduce";
+    if (result.minimumTaxApplied > 0 && result.grossTax <= result.minimumTaxApplied)
+      return "Tax is at the minimum floor — no rebate headroom";
+    if (minimumTaxFloorIsBinding)
+      return "Further rebate limited by minimum tax floor";
+    if (result.investmentSuggestion > 0) return formatMoney(result.investmentSuggestion);
+    return "Rebate opportunity already used";
+  }
+
   return (
     <div className="bg-white border border-gray-200 rounded-lg shadow-sm flex flex-col">
       {/* Header */}
@@ -30,7 +45,9 @@ export default function EmployeeTaxResultView({ result }: EmployeeTaxResultViewP
       {/* Final Tax Summary — always visible */}
       <div className="px-6 py-5 bg-gray-50 border-b border-gray-200 grid grid-cols-2 gap-4">
         <div className="text-center bg-white rounded-lg border border-gray-200 py-4 px-2">
-          <p className="text-xs text-gray-500 mb-1 uppercase tracking-wide">Estimated Annual Tax Payable</p>
+          <p className="text-xs text-gray-500 mb-1 uppercase tracking-wide">
+            {result.finalTaxIncome > 0 ? "Estimated Regular Income Tax" : "Estimated Annual Tax Payable"}
+          </p>
           <p className="text-2xl font-bold text-gray-900">{formatMoney(result.finalTax)}</p>
         </div>
         <div className="text-center bg-white rounded-lg border border-blue-200 py-4 px-2">
@@ -93,9 +110,9 @@ export default function EmployeeTaxResultView({ result }: EmployeeTaxResultViewP
           )}
           <ResultRow
             label="Tax Before Minimum"
-            value={formatMoney(result.finalTaxBeforeMinimumTax)}
+            value={formatMoney(result.grossTax - result.rebate)}
           />
-          {result.minimumTaxApplied > 0 && (
+          {minimumTaxFloorIsBinding && (
             <ResultRow
               label="Minimum Tax Applied"
               value={formatMoney(result.minimumTaxApplied)}
@@ -112,12 +129,8 @@ export default function EmployeeTaxResultView({ result }: EmployeeTaxResultViewP
           {result.rebateEligibleIncome > 0 ? (
             <ResultRow
               label="Additional Investment Suggested"
-              value={
-                result.investmentSuggestion > 0
-                  ? formatMoney(result.investmentSuggestion)
-                  : "—  Rebate fully utilised"
-              }
-              highlight={result.investmentSuggestion > 0}
+              value={getInvestmentAdviceMessage()}
+              highlight={result.investmentSuggestion > 0 && result.grossTax > 0}
             />
           ) : (
             <ResultRow

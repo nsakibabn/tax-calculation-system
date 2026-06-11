@@ -92,40 +92,16 @@ export function calculateEmployeeTax(input: EmployeeTaxInput): EmployeeTaxResult
     rules.progressiveTaxSlabs
   );
 
-  // 11. Investment rebate (§78)
-  //     Base = rebateEligibleIncome (regular income after exemption, sanchayapatra excluded).
-  //     rebate = lowest of: (3% of eligible income), (15% of investment), (10L cap).
-  const { investmentRebate } = rules;
-  let rebate = 0;
-  if (investmentRebate.enabled) {
-    rebate = clampMoney(
-      Math.min(
-        rebateEligibleIncome * investmentRebate.totalIncomeRate,
-        investment * investmentRebate.investmentRate,
-        investmentRebate.maxRebate
-      )
-    );
-    rebate = Math.min(rebate, grossTax); // rebate can never exceed gross tax
-    if (!investmentRebate.verified && rebate > 0) {
-      warnings.push(
-        "Investment rebate constants (3% / 15% / cap) are not restated in the Paripatra — verify against Income Tax Act 2023 §78."
-      );
-    }
-  }
-
-  // 12. Final tax before minimum tax
-  const finalTaxBeforeMinimumTax = clampMoney(grossTax - rebate);
-
-  // 13. Minimum tax — flat for AY 2026-27 (no location split).
-  //     new taxpayer pays 1,000; general taxpayer pays 5,000.
-  //     Applied ONLY when regular taxable income exceeds the tax-free threshold
-  //     (taxableIncome > 0). Sanchayapatra-only income does NOT trigger minimum tax.
+  // 11. Minimum tax — computed BEFORE rebate (depends only on taxableIncome, not on rebate).
+  //     In this simplified calculator, minimum tax applies only when regular taxable income
+  //     exceeds the tax-free threshold. Final-source-tax income (Sanchayapatra) is shown
+  //     separately and does NOT trigger regular minimum tax in this version.
   //
-  //   minimumTaxCandidate — configured floor for this taxpayer (always set, even when not applied)
+  //   minimumTaxCandidate — configured floor for this taxpayer (always populated)
   //   minimumTaxApplied   — floor actually enforced: 0 when taxableIncome = 0
   const minimumTaxCandidate = isNewTaxpayer
-    ? clampMoney(rules.minimumTax.newTaxpayerAmount)
-    : clampMoney(rules.minimumTax.generalAmount);
+    ? rules.minimumTax.newTaxpayerAmount
+    : rules.minimumTax.generalAmount;
 
   const minimumTaxApplies =
     rules.minimumTax.enabled &&
@@ -134,9 +110,45 @@ export function calculateEmployeeTax(input: EmployeeTaxInput): EmployeeTaxResult
 
   const minimumTaxApplied = minimumTaxApplies ? minimumTaxCandidate : 0;
 
-  let finalTax = finalTaxBeforeMinimumTax;
+  // 12. Investment rebate (§78)
+  //     calculatedRebate = raw §78 formula result (may be partially blocked by minimum tax floor)
+  //     effectiveRebate  = actual tax reduction after floor constraint
+  //     rebate           = effectiveRebate (user-facing figure — never overstated)
+  //
+  //     rebateEligibleIncome excludes sanchayapatra — only regular income qualifies.
+  const { investmentRebate } = rules;
+  let calculatedRebate = 0;
+  if (investmentRebate.enabled) {
+    calculatedRebate = clampMoney(
+      Math.min(
+        rebateEligibleIncome * investmentRebate.totalIncomeRate,
+        investment * investmentRebate.investmentRate,
+        investmentRebate.maxRebate
+      )
+    );
+    calculatedRebate = Math.min(calculatedRebate, grossTax);
+    if (!investmentRebate.verified && calculatedRebate > 0) {
+      warnings.push(
+        "Investment rebate constants (3% / 15% / cap) are not restated in the Paripatra — verify against Income Tax Act 2023 §78."
+      );
+    }
+  }
+
+  // effectiveRebate: rebate can only reduce tax down to the minimum floor — beyond that is wasted.
+  const taxReductionCapacity = Math.max(grossTax - minimumTaxApplied, 0);
+  const effectiveRebate = Math.min(calculatedRebate, taxReductionCapacity);
+  const rebate = effectiveRebate;
+
+  // 13. Tax after rebate, then minimum floor.
+  //     finalTaxBeforeMinimumTax uses calculatedRebate (theoretical — for floor-binding check).
+  //     finalTax floors at minimumTaxApplied when applicable.
+  const finalTaxBeforeMinimumTax = clampMoney(grossTax - calculatedRebate);
+
+  let finalTax = minimumTaxApplied > 0
+    ? Math.max(finalTaxBeforeMinimumTax, minimumTaxApplied)
+    : finalTaxBeforeMinimumTax;
+
   if (minimumTaxApplies) {
-    finalTax = Math.max(finalTaxBeforeMinimumTax, minimumTaxApplied);
     if (finalTaxBeforeMinimumTax < minimumTaxApplied) {
       warnings.push(
         `Minimum tax applied: tax raised to ${minimumTaxApplied.toLocaleString("en-US")} (floor${isNewTaxpayer ? " — new taxpayer rate" : ""}).`
@@ -155,22 +167,21 @@ export function calculateEmployeeTax(input: EmployeeTaxInput): EmployeeTaxResult
     warnings.push("Monthly TDS is estimated as final annual tax divided by 12.");
   }
 
-  // 15. Investment suggestion — additional investment that can still produce useful tax rebate.
-  //     Effective ceiling = grossTax - minimumTaxApplied: rebate can only reduce tax down to
-  //     the minimum tax floor (not below it), so any rebate exceeding that gap is wasted.
-  //     When grossTax = 0 or minimum tax consumes the full gross, ceiling = 0, suggestion = 0.
+  // 15. Investment suggestion — how much MORE to invest to exhaust all useful rebate headroom.
+  //     Headroom = taxReductionCapacity = max(grossTax - minimumTaxApplied, 0).
+  //     When floor consumes all headroom (grossTax ≤ minimumTaxApplied), suggestion = 0.
   let investmentSuggestion = 0;
   if (investmentRebate.enabled) {
     const maxUsefulRebate = Math.min(
-      Math.max(grossTax - minimumTaxApplied, 0),
+      taxReductionCapacity,
       rebateEligibleIncome * investmentRebate.totalIncomeRate,
       investmentRebate.maxRebate
     );
-    const investmentForUsefulRebate =
+    const investmentNeededForUsefulRebate =
       investmentRebate.investmentRate > 0
         ? maxUsefulRebate / investmentRebate.investmentRate
         : 0;
-    investmentSuggestion = clampMoney(investmentForUsefulRebate - investment);
+    investmentSuggestion = clampMoney(investmentNeededForUsefulRebate - investment);
   }
 
   return {
@@ -188,6 +199,7 @@ export function calculateEmployeeTax(input: EmployeeTaxInput): EmployeeTaxResult
     taxableIncome,
     slabBreakdown,
     grossTax,
+    calculatedRebate,
     rebate,
     finalTaxBeforeMinimumTax,
     minimumTaxCandidate,

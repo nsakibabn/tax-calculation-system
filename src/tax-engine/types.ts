@@ -58,10 +58,11 @@ export interface EmployeeTaxResult {
   // Tax calculation
   slabBreakdown: SlabBreakdownItem[];
   grossTax: number;
-  rebate: number;
-  finalTaxBeforeMinimumTax: number;
+  calculatedRebate: number;      // §78 formula result — may be partially blocked by minimum tax floor
+  rebate: number;                // = effectiveRebate: actual tax reduction after floor constraint
+  finalTaxBeforeMinimumTax: number; // grossTax − calculatedRebate (used for floor-binding check)
   minimumTaxCandidate: number;   // configured floor for this taxpayer status (always populated)
-  minimumTaxApplied: number;     // floor actually applied: 0 when taxableIncome ≤ 0
+  minimumTaxApplied: number;     // floor actually enforced: 0 when taxableIncome = 0
   finalTax: number;
   monthlyTDS: number;
   investmentSuggestion: number;
