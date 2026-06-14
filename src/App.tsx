@@ -6,10 +6,10 @@ import EmployeeTaxForm from "./components/EmployeeTaxForm";
 import EmployeeTaxResultView from "./components/EmployeeTaxResultView";
 
 const DEFAULT_INPUT: EmployeeTaxInput = {
-  monthlySalary: 50000,
-  yearlyBonus: 100000,
+  monthlySalary: 0,
+  yearlyBonus: 0,
   otherIncome: 0,
-  investment: 100000,
+  investment: 0,
   sanchayapatra: 0,
   taxpayerCategory: "general",
   isNewTaxpayer: false,
